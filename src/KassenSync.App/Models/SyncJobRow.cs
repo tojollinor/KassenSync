@@ -9,6 +9,8 @@ namespace KassenSync.App.Models;
 public sealed class SyncJobRow : INotifyPropertyChanged
 {
     private readonly SyncJob _job;
+    private bool _waitingForUserConfirmation;
+    private bool? _runtimeTargetPresent;
 
     public SyncJobRow(SyncJob job)
     {
@@ -131,8 +133,14 @@ public sealed class SyncJobRow : INotifyPropertyChanged
             if (string.IsNullOrWhiteSpace(SourceFolder) || !Directory.Exists(SourceFolder))
                 return "Quelle fehlt";
 
-            if (TargetType == SyncTargetType.UsbDrive && !IsTargetRootAvailable())
-                return "Wartet auf USB";
+            if (TargetType == SyncTargetType.UsbDrive)
+            {
+                if (_waitingForUserConfirmation)
+                    return "Wartend";
+
+                if (_runtimeTargetPresent == false || !IsTargetRootAvailable())
+                    return "Wartet auf USB";
+            }
 
             if (!IsTargetRootAvailable())
                 return "Ziel nicht verfügbar";
@@ -146,6 +154,7 @@ public sealed class SyncJobRow : INotifyPropertyChanged
         "Bereit" => System.Windows.Media.Brushes.ForestGreen,
         "Inaktiv" => System.Windows.Media.Brushes.Gray,
         "Wartet auf USB" => System.Windows.Media.Brushes.Goldenrod,
+        "Wartend" => System.Windows.Media.Brushes.Goldenrod,
         _ => System.Windows.Media.Brushes.Firebrick
     };
 
@@ -162,6 +171,13 @@ public sealed class SyncJobRow : INotifyPropertyChanged
         AllowedExtensions = _job.AllowedExtensions.ToList(),
         PropagateDeletes = false
     };
+
+    public void UpdateRuntimeState(JobRuntimeState? state)
+    {
+        _waitingForUserConfirmation = state?.WaitingForUserConfirmation == true;
+        _runtimeTargetPresent = state?.TargetPresent;
+        RefreshStatus();
+    }
 
     public void RefreshStatus()
     {

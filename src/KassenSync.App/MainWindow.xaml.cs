@@ -24,6 +24,10 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<SyncJobRow> _jobRows = new();
     private readonly ObservableCollection<JobFilterItem> _jobFilters = new();
     private readonly HashSet<long> _selectedFileIds = new();
+    private readonly Dictionary<string, PersistentMessageWindow> _usbMissingWindows =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, PersistentMessageWindow> _usbResumeWindows =
+        new(StringComparer.OrdinalIgnoreCase);
 
     private readonly DispatcherTimer _refreshTimer;
     private readonly DispatcherTimer _copyStateTimer;
@@ -32,6 +36,7 @@ public partial class MainWindow : Window
     private AppSettings? _settings;
     private TrayIconManager? _trayIcon;
     private CopyProgressWindow? _copyProgressWindow;
+    private PersistentMessageWindow? _persistentErrorWindow;
 
     private bool _refreshing;
     private bool _copyPolling;
@@ -139,6 +144,8 @@ public partial class MainWindow : Window
         if (_copyProgressWindow?.IsVisible == true)
             _copyProgressWindow.Close();
 
+        ClosePersistentWindows();
+
         _trayIcon?.Dispose();
         _trayIcon = null;
     }
@@ -148,6 +155,7 @@ public partial class MainWindow : Window
         Dispatcher.Invoke(() =>
         {
             _allowClose = true;
+            ClosePersistentWindows();
             _trayIcon?.Dispose();
             _trayIcon = null;
             Close();
@@ -196,8 +204,37 @@ public partial class MainWindow : Window
             if (DateTime.UtcNow - state.UpdatedAtUtc > TimeSpan.FromSeconds(10))
                 return;
 
-            var resultWindow = new CopyResultWindow(state);
-            await resultWindow.ShowForAsync(TimeSpan.FromSeconds(3));
+            if (state.Success)
+            {
+                var resultWindow = new CopyResultWindow(state);
+                await resultWindow.ShowForAsync(TimeSpan.FromSeconds(3));
+            }
+            else
+            {
+                _persistentErrorWindow?.CloseProgrammatically();
+
+                var errorText = string.IsNullOrWhiteSpace(state.Error)
+                    ? state.Message
+                    : state.Error;
+
+                var errorWindow = new PersistentMessageWindow(
+                    "Kopiervorgang fehlgeschlagen",
+                    errorText ?? "Unbekannter Fehler.",
+                    "OK",
+                    kind: PersistentMessageKind.Error);
+
+                errorWindow.PrimaryClicked += (_, _) =>
+                {
+                    errorWindow.CloseProgrammatically();
+                    if (ReferenceEquals(_persistentErrorWindow, errorWindow))
+                        _persistentErrorWindow = null;
+                };
+
+                _persistentErrorWindow = errorWindow;
+                errorWindow.Show();
+                errorWindow.Activate();
+            }
+
             await RefreshAllAsync(silent: true);
         }
         catch
@@ -225,6 +262,9 @@ public partial class MainWindow : Window
             ServiceStatusDot.Fill = System.Windows.Media.Brushes.ForestGreen;
 
             var files = await _client.SendAsync<List<IndexedFile>>(IpcMessageTypes.GetFiles);
+            var runtimeStates = await _client.SendAsync<List<JobRuntimeState>>(
+                IpcMessageTypes.GetJobRuntimeStates);
+
             _allFiles = files;
 
             var existingIds = files.Select(x => x.Id).ToHashSet();
@@ -236,9 +276,11 @@ public partial class MainWindow : Window
                 LoadSettingsIntoUi(_settings);
             }
 
+            ApplyRuntimeStates(runtimeStates);
             RebuildFileRows();
             RefreshJobStatuses();
             UpdateJobStatusSummary();
+            UpdateUsbPrompts(runtimeStates);
 
             FooterStatusText.Text = $"{_allFiles.Count} Datei(en) indexiert";
         }
@@ -298,10 +340,244 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ApplyRuntimeStates(IReadOnlyCollection<JobRuntimeState> states)
+    {
+        var byJob = states.ToDictionary(
+            x => x.JobId,
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var row in _jobRows)
+        {
+            byJob.TryGetValue(row.Id, out var state);
+            row.UpdateRuntimeState(state);
+        }
+    }
+
     private void RefreshJobStatuses()
     {
         foreach (var row in _jobRows)
             row.RefreshStatus();
+    }
+
+    private void UpdateUsbPrompts(IReadOnlyCollection<JobRuntimeState> states)
+    {
+        var byJob = states.ToDictionary(
+            x => x.JobId,
+            StringComparer.OrdinalIgnoreCase);
+
+        var configuredUsbJobs = _settings?.Jobs
+            .Where(x => x.Enabled && x.TargetType == SyncTargetType.UsbDrive)
+            .ToArray()
+            ?? Array.Empty<SyncJob>();
+
+        var activeIds = configuredUsbJobs
+            .Select(x => x.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var stale in _usbMissingWindows.Keys
+                     .Where(x => !activeIds.Contains(x))
+                     .ToArray())
+            CloseAndRemove(_usbMissingWindows, stale);
+
+        foreach (var stale in _usbResumeWindows.Keys
+                     .Where(x => !activeIds.Contains(x))
+                     .ToArray())
+            CloseAndRemove(_usbResumeWindows, stale);
+
+        foreach (var job in configuredUsbJobs)
+        {
+            byJob.TryGetValue(job.Id, out var runtime);
+
+            var hasPending = _allFiles.Any(x =>
+                string.Equals(x.JobId, job.Id, StringComparison.OrdinalIgnoreCase) &&
+                x.Status is FileTransferStatus.Indexed
+                    or FileTransferStatus.WaitingForTarget);
+
+            if (!hasPending)
+            {
+                CloseAndRemove(_usbMissingWindows, job.Id);
+                CloseAndRemove(_usbResumeWindows, job.Id);
+                continue;
+            }
+
+            var targetPresent = IsConfiguredTargetPresent(job);
+            var waiting = runtime?.WaitingForUserConfirmation == true;
+            var declined = runtime?.DeclinedForCurrentPresence == true;
+
+            if (!targetPresent && !waiting)
+            {
+                CloseAndRemove(_usbResumeWindows, job.Id);
+                EnsureUsbMissingWindow(job);
+                continue;
+            }
+
+            CloseAndRemove(_usbMissingWindows, job.Id);
+
+            if (targetPresent && waiting && !declined)
+            {
+                EnsureUsbResumeWindow(job);
+            }
+            else
+            {
+                CloseAndRemove(_usbResumeWindows, job.Id);
+            }
+        }
+    }
+
+    private void EnsureUsbMissingWindow(SyncJob job)
+    {
+        if (_usbMissingWindows.TryGetValue(job.Id, out var existing) &&
+            existing.IsVisible)
+            return;
+
+        var window = new PersistentMessageWindow(
+            "Kopiervorgang nicht möglich",
+            "Kein Laufwerk gefunden. Bitte jetzt verbinden zum Fortfahren.",
+            "Später",
+            kind: PersistentMessageKind.Warning);
+
+        window.PrimaryClicked += async (_, _) =>
+        {
+            try
+            {
+                await _client.SendAsync<JobRuntimeState>(
+                    IpcMessageTypes.DeferJob,
+                    new JobControlRequest(job.Id));
+            }
+            catch (Exception ex)
+            {
+                ShowPersistentError("Job konnte nicht auf Wartend gesetzt werden", ex.Message);
+            }
+            finally
+            {
+                CloseAndRemove(_usbMissingWindows, job.Id);
+                await RefreshAllAsync(silent: true);
+            }
+        };
+
+        _usbMissingWindows[job.Id] = window;
+        window.Show();
+        window.Activate();
+    }
+
+    private void EnsureUsbResumeWindow(SyncJob job)
+    {
+        if (_usbResumeWindows.TryGetValue(job.Id, out var existing) &&
+            existing.IsVisible)
+            return;
+
+        var window = new PersistentMessageWindow(
+            "Laufwerk gefunden",
+            "Es gibt noch offene Kopierjobs. Jetzt durchführen?",
+            "Ja",
+            "Nein",
+            PersistentMessageKind.Info);
+
+        window.PrimaryClicked += async (_, _) =>
+        {
+            try
+            {
+                await _client.SendAsync<JobRuntimeState>(
+                    IpcMessageTypes.ResumeJob,
+                    new JobControlRequest(job.Id));
+            }
+            catch (Exception ex)
+            {
+                ShowPersistentError("Job konnte nicht fortgesetzt werden", ex.Message);
+            }
+            finally
+            {
+                CloseAndRemove(_usbResumeWindows, job.Id);
+                await RefreshAllAsync(silent: true);
+            }
+        };
+
+        window.SecondaryClicked += async (_, _) =>
+        {
+            try
+            {
+                await _client.SendAsync<JobRuntimeState>(
+                    IpcMessageTypes.DeclineJobResume,
+                    new JobControlRequest(job.Id));
+            }
+            catch (Exception ex)
+            {
+                ShowPersistentError("Wartezustand konnte nicht gespeichert werden", ex.Message);
+            }
+            finally
+            {
+                CloseAndRemove(_usbResumeWindows, job.Id);
+                await RefreshAllAsync(silent: true);
+            }
+        };
+
+        _usbResumeWindows[job.Id] = window;
+        window.Show();
+        window.Activate();
+    }
+
+    private void ShowPersistentError(string title, string message)
+    {
+        _persistentErrorWindow?.CloseProgrammatically();
+
+        var window = new PersistentMessageWindow(
+            title,
+            message,
+            "OK",
+            kind: PersistentMessageKind.Error);
+
+        window.PrimaryClicked += (_, _) =>
+        {
+            window.CloseProgrammatically();
+            if (ReferenceEquals(_persistentErrorWindow, window))
+                _persistentErrorWindow = null;
+        };
+
+        _persistentErrorWindow = window;
+        window.Show();
+        window.Activate();
+    }
+
+    private static bool IsConfiguredTargetPresent(SyncJob job)
+    {
+        if (string.IsNullOrWhiteSpace(job.TargetFolder))
+            return false;
+
+        try
+        {
+            var root = Path.GetPathRoot(Path.GetFullPath(job.TargetFolder));
+            return !string.IsNullOrWhiteSpace(root) && Directory.Exists(root);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void CloseAndRemove(
+        IDictionary<string, PersistentMessageWindow> windows,
+        string jobId)
+    {
+        if (!windows.Remove(jobId, out var window))
+            return;
+
+        if (window.IsVisible)
+            window.CloseProgrammatically();
+    }
+
+    private void ClosePersistentWindows()
+    {
+        foreach (var window in _usbMissingWindows.Values.ToArray())
+            window.CloseProgrammatically();
+
+        foreach (var window in _usbResumeWindows.Values.ToArray())
+            window.CloseProgrammatically();
+
+        _usbMissingWindows.Clear();
+        _usbResumeWindows.Clear();
+
+        _persistentErrorWindow?.CloseProgrammatically();
+        _persistentErrorWindow = null;
     }
 
     private void UpdateJobStatusSummary()
@@ -318,7 +594,8 @@ public partial class MainWindow : Window
         {
             JobsStatusDot.Fill = System.Windows.Media.Brushes.Firebrick;
         }
-        else if (active.Any(x => x.StatusText == "Wartet auf USB"))
+        else if (active.Any(x =>
+                     x.StatusText is "Wartet auf USB" or "Wartend"))
         {
             JobsStatusDot.Fill = System.Windows.Media.Brushes.Goldenrod;
         }
