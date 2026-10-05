@@ -35,6 +35,7 @@ public static class SettingsMigration
                 Enabled = true,
                 SourceFolder = settings.SourceFolder,
                 TargetFolder = BuildLegacyTarget(settings.TargetDrive, settings.TargetSubfolder),
+                TargetType = SyncTargetType.UsbDrive,
                 IncludeSubdirectories = settings.IncludeSubdirectories,
                 Mode = SyncMode.OneWay,
                 AllowedExtensions = NormalizeExtensions(settings.AllowedExtensions),

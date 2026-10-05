@@ -1,31 +1,49 @@
 # OrdnerSync
 
-OrdnerSync ist eine Windows-Anwendung aus **WPF-GUI + Windows-Dienst**. Der Dienst überwacht einen konfigurierbaren Quellordner, indexiert neue Dateien anhand **Dateiname + SHA-256** und kopiert sie auf ein konfiguriertes Zielmedium.
-
-Bereits erfolgreich ausgegebene Dateien werden nicht automatisch erneut kopiert, auch wenn sie später vom Zielmedium gelöscht werden. Über Checkboxen können einzelne oder mehrere Dateien bewusst erneut ausgegeben werden.
+OrdnerSync ist eine Windows-Anwendung aus **WPF-GUI + Windows-Dienst** für zuverlässige Dateiübertragung und Synchronisation zwischen Ordnern und USB-Zielen.
 
 ## Funktionen
 
-- Windows-Dienst und WPF-GUI
-- SQLite-Index unter `%ProgramData%\\OrdnerSync`
-- automatische Migration des bisherigen `%ProgramData%\\KassenSync`-Datenbestands
-- konfigurierbarer Quellordner und optionale Unterordner
-- konfigurierbare Dateiendungen
+- mehrere unabhängige Sync-Jobs
+- Jobs aktiv/inaktiv schaltbar
+- Einweg-Synchronisation `A → B`
+- bidirektionale Synchronisation `A ↔ B`
+- Konflikterkennung statt blindem Überschreiben
+- normale Ordner und USB-Sticks als Ziel
+- persistenter Wartezustand bei fehlendem USB-Laufwerk
+- Nachfrage beim späteren Wiederverbinden eines wartenden USB-Ziels
+- keine automatische Löschweitergabe
 - `FileSystemWatcher` plus Sicherheits-Rescan
-- Stabilitätsprüfung vor Hashing/Kopieren
-- SHA-256-Indexierung über Dateiname + Hash
-- frei wählbares Ziellaufwerk und Ziel-Unterordner
-- Übernahme der relativen Quellordnerstruktur
-- Wartestatus bei fehlendem Zielmedium
-- sicheres Kopieren über temporäre `.part`-Datei
-- Checkbox-Auswahl mit manueller Wiederausgabe
-- Dienststatus und Dienststeuerung in den Einstellungen
+- Stabilitätsprüfung vor Hashing und Kopieren
+- Deduplizierung über Job, Herkunftsseite, Dateiname und SHA-256
+- SHA-256-Prüfung der temporär kopierten Datei vor dem finalen Ersetzen
+- Erhalt der relativen Ordnerstruktur
+- SQLite-Index unter `%ProgramData%\OrdnerSync`
+- Migration bestehender 0.2.x-Einstellungen und Datei-Historie
+- Checkbox-Auswahl mit zentraler Kopf-Checkbox
+- markierte Indexeinträge können entfernt werden, ohne Quelldateien zu löschen
+- manuelle erneute Verarbeitung markierter Dateien
+- Dateiübersicht nach Job filterbar
+- farbige Statuspunkte für Jobs, Dateien und Dienst
+- Windows-Dienststatus sowie Start/Stop/Neustart in den Einstellungen
+- Infotray-Symbol, Fenster läuft beim Schließen/Minimieren im Tray weiter
 - konfigurierbarer GUI-Autostart
-- Topmost-Kopierfortschritt und Ergebnisanzeige
-- Über-Seite und OrdnerSync-Branding
+- Kopierfortschritt als Topmost-Fenster
+- Fehler immer persistent mit Bestätigung
+- Erfolgsmeldungen: Aus, zeitgesteuert oder persistent mit Bestätigung
+- einstellbare Dauer zeitgesteuerter Erfolgsmeldungen
+- hochauflösende Logo-Darstellung aus der größten verfügbaren Icon-Ebene
 - automatische oder manuelle Updateprüfung über GitHub Releases
-- Installer und Updates direkt aus `tojollinor/OrdnerSync`
+- self-contained Windows-x64-Installer
 
-## Architektur
+## Sicherheit der Synchronisation
 
-Die bestehenden internen .NET-Namespaces bleiben vorerst `KassenSync.*`. Die ausgelieferten Assemblies, Oberfläche, Dienstidentität, Datenpfade und Installer heißen **OrdnerSync**.
+Bei bidirektionalen Jobs speichert OrdnerSync pro Datei den letzten gemeinsamen SHA-256-Stand. Wurde dieselbe Datei seitdem auf beiden Seiten unterschiedlich verändert, wird **keine Seite automatisch überschrieben**. Der Eintrag erhält stattdessen den Status **Konflikt**.
+
+Löschungen werden bewusst nicht auf die Gegenseite übertragen. Wird eine bereits synchronisierte Datei auf einer Seite gelöscht, stellt OrdnerSync sie ebenfalls nicht ungefragt wieder her.
+
+## Upgrade
+
+Bestehende Einstellungen aus OrdnerSync 0.2.x werden automatisch als **Job 1** übernommen. Da 0.2.x auf die Ausgabe an einen Wechseldatenträger ausgelegt war, wird dieser migrierte Job als USB-Ziel behandelt.
+
+Die bestehenden internen .NET-Namespaces heißen aus Kompatibilitätsgründen vorerst weiterhin `KassenSync.*`. Sichtbare Produktnamen, Assemblies, Dienst, Datenpfade und Installer heißen **OrdnerSync**.
