@@ -182,6 +182,36 @@ public sealed class IndexDatabase
         await transaction.CommitAsync(cancellationToken);
     }
 
+    public async Task<int> DeleteByIdsAsync(
+        IEnumerable<long> ids,
+        CancellationToken cancellationToken = default)
+    {
+        var distinctIds = ids.Distinct().Where(x => x > 0).ToArray();
+        if (distinctIds.Length == 0)
+            return 0;
+
+        await using var connection = new SqliteConnection(ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        var deleted = 0;
+        foreach (var id in distinctIds)
+        {
+            await using var command = connection.CreateCommand();
+            command.Transaction = (SqliteTransaction)transaction;
+            command.CommandText = """
+                DELETE FROM indexed_files
+                WHERE id = $id AND status <> $copying;
+                """;
+            command.Parameters.AddWithValue("$id", id);
+            command.Parameters.AddWithValue("$copying", (int)FileTransferStatus.Copying);
+            deleted += await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return deleted;
+    }
+
     public async Task SetStatusAsync(
         long id,
         FileTransferStatus status,

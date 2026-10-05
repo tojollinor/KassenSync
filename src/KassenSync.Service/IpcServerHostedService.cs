@@ -116,6 +116,13 @@ public sealed class IpcServerHostedService(
                 await database.QueueForRecopyAsync(recopy.FileIds, cancellationToken);
                 return IpcResponse.Ok(new { queued = recopy.FileIds.Distinct().Count() });
             }
+            case IpcMessageTypes.DeleteFiles:
+            {
+                var delete = request.Payload.Deserialize<DeleteFilesRequest>(JsonOptions)
+                             ?? throw new InvalidOperationException("Dateiauswahl konnte nicht gelesen werden.");
+                var deleted = await database.DeleteByIdsAsync(delete.FileIds, cancellationToken);
+                return IpcResponse.Ok(new { deleted });
+            }
             default:
                 return IpcResponse.Fail($"Unbekannter IPC-Befehl: {request.Type}");
         }

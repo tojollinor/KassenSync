@@ -35,6 +35,7 @@ public static class IpcMessageTypes
     public const string GetSettings = "get-settings";
     public const string SaveSettings = "save-settings";
     public const string RecopyFiles = "recopy-files";
+    public const string DeleteFiles = "delete-files";
     public const string CopyProgress = "copy-progress";
     public const string CopyCompleted = "copy-completed";
     public const string SettingsChanged = "settings-changed";
@@ -42,3 +43,4 @@ public static class IpcMessageTypes
 
 public sealed record ServiceStatus(bool Running, DateTime UtcNow);
 public sealed record RecopyRequest(IReadOnlyList<long> FileIds);
+public sealed record DeleteFilesRequest(IReadOnlyList<long> FileIds);

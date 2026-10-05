@@ -9,10 +9,17 @@ public sealed class SyncJob
     public bool Enabled { get; set; } = true;
     public string SourceFolder { get; set; } = string.Empty;
     public string TargetFolder { get; set; } = string.Empty;
+    public SyncTargetType TargetType { get; set; } = SyncTargetType.Folder;
     public bool IncludeSubdirectories { get; set; } = true;
     public SyncMode Mode { get; set; } = SyncMode.OneWay;
     public List<string> AllowedExtensions { get; set; } = new();
     public bool PropagateDeletes { get; set; } = false;
+}
+
+public enum SyncTargetType
+{
+    Folder = 0,
+    UsbDrive = 1
 }
 
 public enum SyncMode
