@@ -47,6 +47,7 @@ jobs:
 
       - name: Build
         shell: pwsh
+        run: dotnet build KassenSync.sln -c Release -p:Version=$env:VERSION
 
       - name: Publish WPF app
         shell: pwsh
