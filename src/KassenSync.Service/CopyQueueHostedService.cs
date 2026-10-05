@@ -11,7 +11,13 @@ public sealed class CopyQueueHostedService(
     CopyStateStore copyStateStore,
     ILogger<CopyQueueHostedService> logger) : BackgroundService
 {
-    private enum CopyResult { Copied, WaitingForTarget, Failed, SourceMissing }
+    private enum CopyResult
+    {
+        Copied,
+        WaitingForTarget,
+        Failed,
+        SourceMissing
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -22,12 +28,39 @@ public sealed class CopyQueueHostedService(
             try
             {
                 var settings = await settingsStore.LoadAsync(stoppingToken);
-                var queue = await database.GetAutomaticQueueAsync(100, stoppingToken);
+                var activeJobs = settings.Jobs
+                    .Where(x => x.Enabled)
+                    .ToArray();
+
+                if (activeJobs.Length == 0)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+                    continue;
+                }
+
+                var queue = new List<IndexedFile>();
+                foreach (var job in activeJobs)
+                {
+                    var jobQueue = await database.GetAutomaticQueueForJobAsync(
+                        job.Id,
+                        25,
+                        stoppingToken);
+
+                    queue.AddRange(jobQueue);
+
+                    if (queue.Count >= 100)
+                        break;
+                }
+
                 if (queue.Count == 0)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
                     continue;
                 }
+
+                var jobsById = activeJobs.ToDictionary(
+                    x => x.Id,
+                    StringComparer.OrdinalIgnoreCase);
 
                 var operationId = copyStateStore.Begin(queue.Count);
                 var copied = 0;
@@ -36,20 +69,38 @@ public sealed class CopyQueueHostedService(
                 for (var index = 0; index < queue.Count; index++)
                 {
                     stoppingToken.ThrowIfCancellationRequested();
-                    var result = await ProcessOneAsync(queue[index], settings, index + 1, queue.Count, operationId, stoppingToken);
+
+                    var file = queue[index];
+                    if (!jobsById.TryGetValue(file.JobId, out var job))
+                        continue;
+
+                    var result = await ProcessOneAsync(
+                        file,
+                        job,
+                        index + 1,
+                        queue.Count,
+                        operationId,
+                        stoppingToken);
+
                     switch (result)
                     {
                         case CopyResult.Copied:
                             copied++;
                             break;
+
                         case CopyResult.WaitingForTarget when copied > 0:
-                            failure ??= "Das Zielmedium ist nicht mehr verfügbar. Nicht alle Dateien konnten kopiert werden.";
+                            failure ??=
+                                "Mindestens ein Zielordner ist nicht verfügbar. Nicht alle Dateien konnten kopiert werden.";
                             break;
+
                         case CopyResult.Failed:
-                            failure ??= "Mindestens eine Datei konnte nicht kopiert werden.";
+                            failure ??=
+                                "Mindestens eine Datei konnte nicht kopiert werden.";
                             break;
+
                         case CopyResult.SourceMissing:
-                            failure ??= "Mindestens eine Quelldatei ist nicht mehr vorhanden.";
+                            failure ??=
+                                "Mindestens eine Quelldatei ist nicht mehr vorhanden.";
                             break;
                     }
                 }
@@ -75,7 +126,7 @@ public sealed class CopyQueueHostedService(
 
     private async Task<CopyResult> ProcessOneAsync(
         IndexedFile file,
-        AppSettings settings,
+        SyncJob job,
         int currentFile,
         int totalFiles,
         string operationId,
@@ -83,43 +134,99 @@ public sealed class CopyQueueHostedService(
     {
         if (!File.Exists(file.FullSourcePath))
         {
-            await database.SetStatusAsync(file.Id, FileTransferStatus.SourceMissing,
-                "Die Quelldatei ist nicht mehr vorhanden.", cancellationToken);
+            await database.SetStatusAsync(
+                file.Id,
+                FileTransferStatus.SourceMissing,
+                "Die Quelldatei ist nicht mehr vorhanden.",
+                cancellationToken);
+
             return CopyResult.SourceMissing;
         }
 
-        if (!targetPathService.IsTargetAvailable(settings))
+        if (!targetPathService.IsTargetAvailable(job, file.SourceSide))
         {
-            await database.SetStatusAsync(file.Id, FileTransferStatus.WaitingForTarget,
-                $"Das Zielmedium '{settings.TargetDrive}' ist nicht verfügbar.", cancellationToken);
+            var target = targetPathService.GetTargetRoot(job, file.SourceSide);
+
+            await database.SetStatusAsync(
+                file.Id,
+                FileTransferStatus.WaitingForTarget,
+                $"Der Zielordner '{target}' ist nicht verfügbar.",
+                cancellationToken);
+
             return CopyResult.WaitingForTarget;
         }
 
         try
         {
-            await database.SetStatusAsync(file.Id, FileTransferStatus.Copying, cancellationToken: cancellationToken);
-            copyStateStore.StartFile(operationId, currentFile, totalFiles, file.FileName);
-            var progress = new InlineProgress<CopyProgress>(p => copyStateStore.Report(operationId, p));
-            var destination = await copyService.CopyAsync(file, settings, currentFile, totalFiles, progress, cancellationToken);
+            await database.SetStatusAsync(
+                file.Id,
+                FileTransferStatus.Copying,
+                cancellationToken: cancellationToken);
+
+            copyStateStore.StartFile(
+                operationId,
+                currentFile,
+                totalFiles,
+                file.FileName);
+
+            var progress = new InlineProgress<CopyProgress>(
+                p => copyStateStore.Report(operationId, p));
+
+            var destination = await copyService.CopyAsync(
+                file,
+                job,
+                currentFile,
+                totalFiles,
+                progress,
+                cancellationToken);
+
             await database.MarkCopiedAsync(file.Id, cancellationToken);
-            logger.LogInformation("Copied {Source} to {Destination}.", file.FullSourcePath, destination);
+
+            logger.LogInformation(
+                "Job {Job}: copied {Source} to {Destination}.",
+                job.Name,
+                file.FullSourcePath,
+                destination);
+
             return CopyResult.Copied;
         }
         catch (TargetUnavailableException ex)
         {
-            await database.SetStatusAsync(file.Id, FileTransferStatus.WaitingForTarget, ex.Message, cancellationToken);
-            logger.LogInformation("Target unavailable. {File} remains queued.", file.FileName);
+            await database.SetStatusAsync(
+                file.Id,
+                FileTransferStatus.WaitingForTarget,
+                ex.Message,
+                cancellationToken);
+
+            logger.LogInformation(
+                "Job {Job}: target unavailable for {File}; item remains queued.",
+                job.Name,
+                file.FileName);
+
             return CopyResult.WaitingForTarget;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            await database.SetStatusAsync(file.Id, FileTransferStatus.Indexed, cancellationToken: CancellationToken.None);
+            await database.SetStatusAsync(
+                file.Id,
+                FileTransferStatus.Indexed,
+                cancellationToken: CancellationToken.None);
             throw;
         }
         catch (Exception ex)
         {
-            await database.SetStatusAsync(file.Id, FileTransferStatus.Failed, ex.Message, cancellationToken);
-            logger.LogError(ex, "Copy failed for {File}.", file.FullSourcePath);
+            await database.SetStatusAsync(
+                file.Id,
+                FileTransferStatus.Failed,
+                ex.Message,
+                cancellationToken);
+
+            logger.LogError(
+                ex,
+                "Job {Job}: copy failed for {File}.",
+                job.Name,
+                file.FullSourcePath);
+
             return CopyResult.Failed;
         }
     }
