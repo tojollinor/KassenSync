@@ -3,7 +3,7 @@
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
-    <Version>0.3.4</Version>
+    <Version>0.3.5</Version>
     <Company>OrdnerSync</Company>
     <Product>OrdnerSync</Product>
   </PropertyGroup>
