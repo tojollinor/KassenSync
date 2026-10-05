@@ -42,9 +42,35 @@ jobs:
           }
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Generate confirmed OrdnerSync icon
+      - name: Verify branding assets
         shell: pwsh
-        run: .\\tools\\Generate-OrdnerSyncIcon.ps1
+        run: |
+          $logo = 'src/KassenSync.App/Assets/OrdnerSyncLogoFull.png'
+          $iconPng = 'src/KassenSync.App/Assets/OrdnerSyncIcon.png'
+          $ico = 'src/KassenSync.App/Assets/OrdnerSync.ico'
+
+          foreach ($file in @($logo, $iconPng, $ico)) {
+            if (-not (Test-Path $file)) { throw "Branding asset missing: $file" }
+          }
+
+          if ((Get-Item $logo).Length -lt 500000) { throw "Full logo PNG is unexpectedly small/corrupt." }
+          if ((Get-Item $iconPng).Length -lt 30000) { throw "Header icon PNG is unexpectedly small/corrupt." }
+          if ((Get-Item $ico).Length -lt 50000) { throw "Windows ICO is unexpectedly small/corrupt." }
+
+          $pngSig = [byte[]](0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A)
+          foreach ($png in @($logo, $iconPng)) {
+            $bytes = [IO.File]::ReadAllBytes($png)
+            for ($i = 0; $i -lt 8; $i++) {
+              if ($bytes[$i] -ne $pngSig[$i]) { throw "Invalid PNG signature: $png" }
+            }
+          }
+
+          $icoBytes = [IO.File]::ReadAllBytes($ico)
+          if ($icoBytes[0] -ne 0 -or $icoBytes[1] -ne 0 -or $icoBytes[2] -ne 1 -or $icoBytes[3] -ne 0) {
+            throw "Invalid ICO signature."
+          }
+          $frameCount = [BitConverter]::ToUInt16($icoBytes, 4)
+          if ($frameCount -lt 7) { throw "ICO does not contain the expected icon sizes." }
 
       - name: Restore
         run: dotnet restore OrdnerSync.sln
