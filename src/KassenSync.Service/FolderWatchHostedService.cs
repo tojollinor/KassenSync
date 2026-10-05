@@ -58,6 +58,16 @@ public sealed class FolderWatchHostedService(
                 settings.FileStableDelayMilliseconds,
                 expectedKeys,
                 stoppingToken);
+
+            if (job.Mode == SyncMode.Bidirectional)
+            {
+                ConfigureWatcher(
+                    job,
+                    SyncSide.B,
+                    settings.FileStableDelayMilliseconds,
+                    expectedKeys,
+                    stoppingToken);
+            }
         }
 
         foreach (var key in _watchers.Keys
@@ -146,17 +156,28 @@ public sealed class FolderWatchHostedService(
         {
             try
             {
-                var count = await indexer.ScanAsync(
+                var countA = await indexer.ScanAsync(
                     job,
                     SyncSide.A,
                     settings.FileStableDelayMilliseconds,
                     cancellationToken);
 
-                if (count > 0)
+                var countB = 0;
+                if (job.Mode == SyncMode.Bidirectional)
+                {
+                    countB = await indexer.ScanAsync(
+                        job,
+                        SyncSide.B,
+                        settings.FileStableDelayMilliseconds,
+                        cancellationToken);
+                }
+
+                var total = countA + countB;
+                if (total > 0)
                     logger.LogInformation(
                         "Safety scan for job {Job} indexed {Count} new file(s).",
                         job.Name,
-                        count);
+                        total);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

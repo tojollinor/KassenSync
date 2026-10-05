@@ -182,6 +182,15 @@ public sealed class CopyQueueHostedService(
 
             await database.MarkCopiedAsync(file.Id, cancellationToken);
 
+            if (job.Mode == SyncMode.Bidirectional)
+            {
+                await database.SetSyncBaselineAsync(
+                    job.Id,
+                    file.RelativePath,
+                    file.Sha256,
+                    cancellationToken);
+            }
+
             logger.LogInformation(
                 "Job {Job}: copied {Source} to {Destination}.",
                 job.Name,
