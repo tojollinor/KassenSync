@@ -8,8 +8,11 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <AssemblyName>OrdnerSync.App</AssemblyName>
     <Product>OrdnerSync</Product>
+    <ApplicationIcon>Assets\OrdnerSync.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\KassenSync.Core\KassenSync.Core.csproj" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
+    <Resource Include="Assets\OrdnerSync.ico" />
   </ItemGroup>
 </Project>

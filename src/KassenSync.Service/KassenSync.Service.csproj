@@ -6,6 +6,7 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <AssemblyName>OrdnerSync.Service</AssemblyName>
     <Product>OrdnerSync</Product>
+    <ApplicationIcon>..\KassenSync.App\Assets\OrdnerSync.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\KassenSync.Core\KassenSync.Core.csproj" />

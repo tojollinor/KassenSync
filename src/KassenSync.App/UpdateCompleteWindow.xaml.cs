@@ -8,7 +8,7 @@ public partial class UpdateCompleteWindow : Window
     public UpdateCompleteWindow()
     {
         InitializeComponent();
-        VersionText.Text = $"KassenSync {AppVersion.Display} ist jetzt installiert.";
+        VersionText.Text = $"OrdnerSync {AppVersion.Display} ist jetzt installiert.";
     }
 
     public async Task ShowForAsync(TimeSpan duration)
