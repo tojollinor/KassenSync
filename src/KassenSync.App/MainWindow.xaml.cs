@@ -73,7 +73,7 @@ public partial class MainWindow : Window
         SyncModeComboBox.ItemsSource = new[]
         {
             new EnumOption<SyncMode>("Einweg", SyncMode.OneWay),
-            new EnumOption<SyncMode>("Bidirektional", SyncMode.Bidirectional)
+            new EnumOption<SyncMode>("Bidirektional (Beta)", SyncMode.Bidirectional)
         };
         SyncModeComboBox.DisplayMemberPath = nameof(EnumOption<SyncMode>.Name);
         SyncModeComboBox.SelectedValuePath = nameof(EnumOption<SyncMode>.Value);

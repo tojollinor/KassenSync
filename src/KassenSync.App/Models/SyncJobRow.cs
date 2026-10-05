@@ -104,7 +104,7 @@ public sealed class SyncJobRow : INotifyPropertyChanged
         }
     }
 
-    public string ModeText => Mode == SyncMode.Bidirectional ? "Bidirektional" : "Einweg";
+    public string ModeText => Mode == SyncMode.Bidirectional ? "Bidirektional (Beta)" : "Einweg";
 
     public string AllowedExtensionsText
     {
