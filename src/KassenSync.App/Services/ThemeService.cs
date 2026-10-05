@@ -12,14 +12,14 @@ public static class ThemeService
 
         try
         {
-            var color = (Color)ColorConverter.ConvertFromString(normalized);
+            var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(normalized);
             var brush = new SolidColorBrush(color);
             brush.Freeze();
             System.Windows.Application.Current.Resources["AppBackgroundBrush"] = brush;
         }
         catch
         {
-            var fallback = (Color)ColorConverter.ConvertFromString(DefaultBackgroundColor);
+            var fallback = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(DefaultBackgroundColor);
             var brush = new SolidColorBrush(fallback);
             brush.Freeze();
             System.Windows.Application.Current.Resources["AppBackgroundBrush"] = brush;
