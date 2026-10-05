@@ -126,6 +126,37 @@ public sealed class IpcServerHostedService(
                 var deleted = await database.DeleteByIdsAsync(delete.FileIds, cancellationToken);
                 return IpcResponse.Ok(new { deleted });
             }
+            case IpcMessageTypes.DeleteJob:
+            {
+                var delete = request.Payload.Deserialize<DeleteJobRequest>(JsonOptions)
+                             ?? throw new InvalidOperationException("Job konnte nicht gelesen werden.");
+                var settings = await settingsStore.LoadAsync(cancellationToken);
+                var job = settings.Jobs.FirstOrDefault(x =>
+                    string.Equals(x.Id, delete.JobId, StringComparison.OrdinalIgnoreCase))
+                    ?? throw new InvalidOperationException("Der Job existiert nicht mehr.");
+
+                if (settings.Jobs.Count <= 1)
+                    throw new InvalidOperationException("Mindestens ein Sync-Job muss vorhanden bleiben.");
+
+                var originalJobs = settings.Jobs.ToList();
+                settings.Jobs = settings.Jobs
+                    .Where(x => !string.Equals(x.Id, job.Id, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                await settingsStore.SaveAsync(settings, cancellationToken);
+                try
+                {
+                    var deletedFiles = await database.DeleteJobDataAsync(job.Id, cancellationToken);
+                    runtimeStateStore.Remove(job.Id);
+                    return IpcResponse.Ok(new { deletedFiles });
+                }
+                catch
+                {
+                    settings.Jobs = originalJobs;
+                    await settingsStore.SaveAsync(settings, CancellationToken.None);
+                    throw;
+                }
+            }
             case IpcMessageTypes.DeferJob:
             {
                 var control = request.Payload.Deserialize<JobControlRequest>(JsonOptions)
