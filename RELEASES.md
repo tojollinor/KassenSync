@@ -1,5 +1,15 @@
 # Releases
 
+## 0.3.9
+
+- beschädigte Branding-Assets aus 0.3.8 ersetzt
+- vollständiges vom Nutzer geliefertes Logo unverändert als echtes PNG-Asset auf der Über-Seite eingebunden
+- bestätigtes Windows-ICO unverändert als Binärdatei eingebunden; keine Build-Generierung oder automatische Überschreibung mehr
+- separates sauberes PNG für das kleine Logo in der Hauptansicht verwendet
+- CI prüft PNG-/ICO-Signaturen und Mindestgrößen vor dem Build
+- bidirektionaler Modus bleibt als Beta gekennzeichnet
+
+
 ## 0.3.8
 
 - Über-Seite verwendet das gelieferte vollständige OrdnerSync-Rasterlogo inklusive Schriftzug direkt als Asset
