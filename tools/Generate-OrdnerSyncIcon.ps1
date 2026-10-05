@@ -7,7 +7,17 @@ param(
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing
 
-$iconFull = [System.IO.Path]::GetFullPath($IconPath)
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+
+function Resolve-RepoPath {
+    param([string]$Path)
+    if ([System.IO.Path]::IsPathRooted($Path)) {
+        return [System.IO.Path]::GetFullPath($Path)
+    }
+    return [System.IO.Path]::GetFullPath((Join-Path $repoRoot $Path))
+}
+
+$iconFull = Resolve-RepoPath $IconPath
 if (-not (Test-Path $iconFull)) {
     throw "OrdnerSync master icon not found: $iconFull"
 }
@@ -78,7 +88,7 @@ try {
         $source.Height,
         [System.Drawing.GraphicsUnit]::Pixel)
 
-    $previewFull = [System.IO.Path]::GetFullPath($PreviewPath)
+    $previewFull = Resolve-RepoPath $PreviewPath
     [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($previewFull)) | Out-Null
     $bitmap.Save($previewFull, [System.Drawing.Imaging.ImageFormat]::Png)
 
