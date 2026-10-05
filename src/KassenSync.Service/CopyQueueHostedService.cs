@@ -9,6 +9,7 @@ public sealed class CopyQueueHostedService(
     FileCopyService copyService,
     TargetPathService targetPathService,
     CopyStateStore copyStateStore,
+    JobRuntimeStateStore runtimeStateStore,
     ILogger<CopyQueueHostedService> logger) : BackgroundService
 {
     private enum CopyResult
@@ -41,6 +42,15 @@ public sealed class CopyQueueHostedService(
                 var queue = new List<IndexedFile>();
                 foreach (var job in activeJobs)
                 {
+                    if (job.TargetType == SyncTargetType.UsbDrive)
+                    {
+                        var targetPresent = targetPathService.IsTargetAvailable(job, SyncSide.A);
+                        runtimeStateStore.UpdateTargetPresence(job.Id, targetPresent);
+
+                        if (runtimeStateStore.IsWaiting(job.Id))
+                            continue;
+                    }
+
                     var jobQueue = await database.GetAutomaticQueueForJobAsync(
                         job.Id,
                         25,
