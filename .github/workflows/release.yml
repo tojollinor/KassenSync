@@ -28,10 +28,6 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Prepare OrdnerSync logo assets
-        shell: pwsh
-        run: .\tools\Generate-OrdnerSyncIcon.ps1
-
       - name: Determine version
         shell: pwsh
         run: |
