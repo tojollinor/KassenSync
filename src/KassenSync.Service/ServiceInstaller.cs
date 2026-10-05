@@ -47,6 +47,12 @@ internal static class ServiceInstaller
         return 0;
     }
 
+    public static int SetAutoStart(bool enabled)
+    {
+        RunSc("config", ServiceName, "start=", enabled ? "auto" : "demand");
+        return 0;
+    }
+
     private static void StopAndDelete(string serviceName)
     {
         RunScIgnoreErrors("stop", serviceName);

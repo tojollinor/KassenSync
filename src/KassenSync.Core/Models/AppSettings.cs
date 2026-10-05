@@ -8,6 +8,7 @@ public sealed class AppSettings
     public bool CheckForUpdatesOnStart { get; set; } = true;
     public SuccessNotificationMode SuccessNotificationMode { get; set; } = SuccessNotificationMode.Timed;
     public int SuccessNotificationSeconds { get; set; } = 3;
+    public string UiBackgroundColor { get; set; } = "#EAF6FF";
     public int RescanIntervalSeconds { get; set; } = 30;
     public int FileStableDelayMilliseconds { get; set; } = 1500;
 

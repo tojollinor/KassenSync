@@ -24,6 +24,21 @@ public static class SettingsMigration
             changed = true;
         }
 
+        if (!IsValidRgbHex(settings.UiBackgroundColor))
+        {
+            settings.UiBackgroundColor = "#EAF6FF";
+            changed = true;
+        }
+        else
+        {
+            var normalizedColor = settings.UiBackgroundColor.ToUpperInvariant();
+            if (!string.Equals(settings.UiBackgroundColor, normalizedColor, StringComparison.Ordinal))
+            {
+                settings.UiBackgroundColor = normalizedColor;
+                changed = true;
+            }
+        }
+
         settings.Jobs ??= new List<SyncJob>();
 
         if (settings.Jobs.Count == 0)
@@ -101,6 +116,14 @@ public static class SettingsMigration
         }
 
         return changed;
+    }
+
+    public static bool IsValidRgbHex(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length != 7 || value[0] != '#')
+            return false;
+
+        return value.Skip(1).All(Uri.IsHexDigit);
     }
 
     public static List<string> NormalizeExtensions(IEnumerable<string>? extensions)

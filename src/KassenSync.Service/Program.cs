@@ -31,6 +31,18 @@ if (args.Any(x => string.Equals(x, "--restart-service", StringComparison.Ordinal
     return;
 }
 
+if (args.Any(x => string.Equals(x, "--enable-autostart", StringComparison.OrdinalIgnoreCase)))
+{
+    Environment.ExitCode = ServiceInstaller.SetAutoStart(true);
+    return;
+}
+
+if (args.Any(x => string.Equals(x, "--disable-autostart", StringComparison.OrdinalIgnoreCase)))
+{
+    Environment.ExitCode = ServiceInstaller.SetAutoStart(false);
+    return;
+}
+
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddWindowsService(options => options.ServiceName = ServiceInstaller.ServiceName);
 builder.Services.AddSingleton<SettingsStore>();
