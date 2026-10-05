@@ -40,8 +40,7 @@ function New-LogoPngBytes {
 
         # 32 px Sicherheitszone im 320er Designraster. Das eigentliche 256er
         # Logo bleibt vollständig sichtbar, auch bei kleinen Windows-Iconstufen.
-        $offset = 32.0
-        function L([float]$v) { return [float](($v + $offset) * $scale) }
+        $g.TranslateTransform((S 32), (S 32))
 
         $dark = [System.Drawing.Color]::FromArgb(255, 23, 121, 201)
         $mid = [System.Drawing.Color]::FromArgb(255, 35, 153, 226)
@@ -52,51 +51,51 @@ function New-LogoPngBytes {
         # Folder tab
         $tab = [System.Drawing.Drawing2D.GraphicsPath]::new()
         $tab.AddPolygon([System.Drawing.PointF[]]@(
-            [System.Drawing.PointF]::new((L 36), (L 50)),
-            [System.Drawing.PointF]::new((L 110), (L 50)),
-            [System.Drawing.PointF]::new((L 136), (L 67)),
-            [System.Drawing.PointF]::new((L 188), (L 67)),
-            [System.Drawing.PointF]::new((L 188), (L 86)),
-            [System.Drawing.PointF]::new((L 36), (L 86))
+            [System.Drawing.PointF]::new((S 36), (S 50)),
+            [System.Drawing.PointF]::new((S 110), (S 50)),
+            [System.Drawing.PointF]::new((S 136), (S 67)),
+            [System.Drawing.PointF]::new((S 188), (S 67)),
+            [System.Drawing.PointF]::new((S 188), (S 86)),
+            [System.Drawing.PointF]::new((S 36), (S 86))
         ))
         $tabBrush = [System.Drawing.SolidBrush]::new($dark)
         $g.FillPath($tabBrush, $tab)
 
         # Main folder body
-        $body = New-RoundedRectPath -X (L 20) -Y (L 68) -Width (L 216) -Height (L 150) -Radius (L 18)
-        $outline = [System.Drawing.Pen]::new($dark, [Math]::Max(1, (L 7)))
+        $body = New-RoundedRectPath -X (S 20) -Y (S 68) -Width (S 216) -Height (S 150) -Radius (S 18)
+        $outline = [System.Drawing.Pen]::new($dark, [Math]::Max(1, (S 7)))
         $bodyBrush = [System.Drawing.SolidBrush]::new($mid)
         $g.FillPath($bodyBrush, $body)
         $g.DrawPath($outline, $body)
 
         # Front highlight and lower stripe
-        $front = New-RoundedRectPath -X (L 29) -Y (L 88) -Width (L 198) -Height (L 119) -Radius (L 15)
+        $front = New-RoundedRectPath -X (S 29) -Y (S 88) -Width (S 198) -Height (S 119) -Radius (S 15)
         $frontBrush = [System.Drawing.SolidBrush]::new($light)
         $g.FillPath($frontBrush, $front)
 
-        $lowerRect = [System.Drawing.RectangleF]::new((L 29), (L 160), (L 198), (L 47))
+        $lowerRect = [System.Drawing.RectangleF]::new((S 29), (S 160), (S 198), (S 47))
         $lowerBrush = [System.Drawing.SolidBrush]::new($lower)
         $g.FillRectangle($lowerBrush, $lowerRect)
 
         # Circular sync arrows
-        $arcPen = [System.Drawing.Pen]::new($white, [Math]::Max(2, (L 16)))
+        $arcPen = [System.Drawing.Pen]::new($white, [Math]::Max(2, (S 16)))
         $arcPen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
         $arcPen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
 
-        $arcRect = [System.Drawing.RectangleF]::new((L 76), (L 108), (L 104), (L 78))
+        $arcRect = [System.Drawing.RectangleF]::new((S 76), (S 108), (S 104), (S 78))
         $g.DrawArc($arcPen, $arcRect, 205, 150)
         $g.DrawArc($arcPen, $arcRect, 25, 150)
 
         $arrowBrush = [System.Drawing.SolidBrush]::new($white)
         $g.FillPolygon($arrowBrush, [System.Drawing.PointF[]]@(
-            [System.Drawing.PointF]::new((L 175), (L 103)),
-            [System.Drawing.PointF]::new((L 205), (L 122)),
-            [System.Drawing.PointF]::new((L 178), (L 143))
+            [System.Drawing.PointF]::new((S 175), (S 103)),
+            [System.Drawing.PointF]::new((S 205), (S 122)),
+            [System.Drawing.PointF]::new((S 178), (S 143))
         ))
         $g.FillPolygon($arrowBrush, [System.Drawing.PointF[]]@(
-            [System.Drawing.PointF]::new((L 81), (L 191)),
-            [System.Drawing.PointF]::new((L 51), (L 172)),
-            [System.Drawing.PointF]::new((L 78), (L 151))
+            [System.Drawing.PointF]::new((S 81), (S 191)),
+            [System.Drawing.PointF]::new((S 51), (S 172)),
+            [System.Drawing.PointF]::new((S 78), (S 151))
         ))
 
         # Transparenz ist ausschließlich außerhalb der Logoform erlaubt.
