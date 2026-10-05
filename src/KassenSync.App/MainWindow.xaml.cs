@@ -37,6 +37,7 @@ public partial class MainWindow : Window
     private TrayIconManager? _trayIcon;
     private CopyProgressWindow? _copyProgressWindow;
     private PersistentMessageWindow? _persistentErrorWindow;
+    private PersistentMessageWindow? _persistentSuccessWindow;
 
     private bool _refreshing;
     private bool _copyPolling;
@@ -50,6 +51,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        var logo = LogoImageService.GetLargestIconFrame();
+        HeaderLogoImage.Source = logo;
+        AboutLogoImage.Source = logo;
 
         VersionText.Text = $"OrdnerSync {AppVersion.Display}";
         AboutVersionText.Text = $"Version {AppVersion.Display}";
@@ -73,6 +78,15 @@ public partial class MainWindow : Window
         };
         SyncModeComboBox.DisplayMemberPath = nameof(EnumOption<SyncMode>.Name);
         SyncModeComboBox.SelectedValuePath = nameof(EnumOption<SyncMode>.Value);
+
+        SuccessNotificationModeComboBox.ItemsSource = new[]
+        {
+            new EnumOption<SuccessNotificationMode>("Aus", SuccessNotificationMode.Off),
+            new EnumOption<SuccessNotificationMode>("Zeitgesteuert", SuccessNotificationMode.Timed),
+            new EnumOption<SuccessNotificationMode>("Persistent mit Bestätigung", SuccessNotificationMode.Persistent)
+        };
+        SuccessNotificationModeComboBox.DisplayMemberPath = nameof(EnumOption<SuccessNotificationMode>.Name);
+        SuccessNotificationModeComboBox.SelectedValuePath = nameof(EnumOption<SuccessNotificationMode>.Value);
 
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _refreshTimer.Tick += async (_, _) => await RefreshAllAsync(silent: true);
@@ -206,8 +220,30 @@ public partial class MainWindow : Window
 
             if (state.Success)
             {
-                var resultWindow = new CopyResultWindow(state);
-                await resultWindow.ShowForAsync(TimeSpan.FromSeconds(3));
+                var mode = _settings?.SuccessNotificationMode
+                           ?? SuccessNotificationMode.Timed;
+
+                switch (mode)
+                {
+                    case SuccessNotificationMode.Off:
+                        break;
+
+                    case SuccessNotificationMode.Persistent:
+                        ShowPersistentSuccess(state.Message);
+                        break;
+
+                    default:
+                    {
+                        var seconds = Math.Clamp(
+                            _settings?.SuccessNotificationSeconds ?? 3,
+                            1,
+                            60);
+
+                        var resultWindow = new CopyResultWindow(state);
+                        await resultWindow.ShowForAsync(TimeSpan.FromSeconds(seconds));
+                        break;
+                    }
+                }
             }
             else
             {
@@ -310,6 +346,10 @@ public partial class MainWindow : Window
     {
         AutostartCheckBox.IsChecked = AutostartManager.IsEnabled();
         UpdateCheckBox.IsChecked = settings.CheckForUpdatesOnStart;
+        SuccessNotificationModeComboBox.SelectedValue = settings.SuccessNotificationMode;
+        SuccessNotificationSecondsTextBox.Text =
+            Math.Clamp(settings.SuccessNotificationSeconds, 1, 60).ToString();
+        UpdateSuccessNotificationControls();
 
         _jobRows.Clear();
 
@@ -516,6 +556,28 @@ public partial class MainWindow : Window
         window.Activate();
     }
 
+    private void ShowPersistentSuccess(string message)
+    {
+        _persistentSuccessWindow?.CloseProgrammatically();
+
+        var window = new PersistentMessageWindow(
+            "Kopiervorgang erfolgreich",
+            message,
+            "OK",
+            kind: PersistentMessageKind.Success);
+
+        window.PrimaryClicked += (_, _) =>
+        {
+            window.CloseProgrammatically();
+            if (ReferenceEquals(_persistentSuccessWindow, window))
+                _persistentSuccessWindow = null;
+        };
+
+        _persistentSuccessWindow = window;
+        window.Show();
+        window.Activate();
+    }
+
     private void ShowPersistentError(string title, string message)
     {
         _persistentErrorWindow?.CloseProgrammatically();
@@ -578,6 +640,9 @@ public partial class MainWindow : Window
 
         _persistentErrorWindow?.CloseProgrammatically();
         _persistentErrorWindow = null;
+
+        _persistentSuccessWindow?.CloseProgrammatically();
+        _persistentSuccessWindow = null;
     }
 
     private void UpdateJobStatusSummary()
@@ -950,17 +1015,60 @@ public partial class MainWindow : Window
     {
         var jobs = _jobRows.Select(x => x.ToModel()).ToList();
 
+        var notificationMode =
+            SuccessNotificationModeComboBox.SelectedValue is SuccessNotificationMode selectedMode
+                ? selectedMode
+                : SuccessNotificationMode.Timed;
+
+        var notificationSeconds =
+            _settings?.SuccessNotificationSeconds ?? 3;
+
+        if (notificationMode == SuccessNotificationMode.Timed)
+        {
+            if (!int.TryParse(
+                    SuccessNotificationSecondsTextBox.Text,
+                    out notificationSeconds) ||
+                notificationSeconds is < 1 or > 60)
+            {
+                throw new InvalidOperationException(
+                    "Die Anzeigedauer der Erfolgsmeldung muss zwischen 1 und 60 Sekunden liegen.");
+            }
+        }
+        else if (int.TryParse(
+                     SuccessNotificationSecondsTextBox.Text,
+                     out var optionalSeconds))
+        {
+            notificationSeconds = Math.Clamp(optionalSeconds, 1, 60);
+        }
+
         var settings = new AppSettings
         {
             Jobs = jobs,
             GuiAutostart = AutostartCheckBox.IsChecked == true,
             CheckForUpdatesOnStart = UpdateCheckBox.IsChecked == true,
+            SuccessNotificationMode = notificationMode,
+            SuccessNotificationSeconds = notificationSeconds,
             RescanIntervalSeconds = _settings?.RescanIntervalSeconds ?? 30,
             FileStableDelayMilliseconds =
                 _settings?.FileStableDelayMilliseconds ?? 1500
         };
 
         return settings;
+    }
+
+    private void SuccessNotificationModeComboBox_SelectionChanged(
+        object sender,
+        System.Windows.Controls.SelectionChangedEventArgs e)
+        => UpdateSuccessNotificationControls();
+
+    private void UpdateSuccessNotificationControls()
+    {
+        if (SuccessNotificationSecondsTextBox is null ||
+            SuccessNotificationModeComboBox is null)
+            return;
+
+        SuccessNotificationSecondsTextBox.IsEnabled =
+            SuccessNotificationModeComboBox.SelectedValue is SuccessNotificationMode.Timed;
     }
 
     private async Task CheckForUpdatesAsync(bool manual)
