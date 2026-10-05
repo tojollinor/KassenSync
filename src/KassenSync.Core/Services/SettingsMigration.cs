@@ -10,6 +10,20 @@ public static class SettingsMigration
 
         settings.RescanIntervalSeconds = Math.Max(5, settings.RescanIntervalSeconds);
         settings.FileStableDelayMilliseconds = Math.Max(250, settings.FileStableDelayMilliseconds);
+
+        var successSeconds = Math.Clamp(settings.SuccessNotificationSeconds, 1, 60);
+        if (successSeconds != settings.SuccessNotificationSeconds)
+        {
+            settings.SuccessNotificationSeconds = successSeconds;
+            changed = true;
+        }
+
+        if (!Enum.IsDefined(typeof(SuccessNotificationMode), settings.SuccessNotificationMode))
+        {
+            settings.SuccessNotificationMode = SuccessNotificationMode.Timed;
+            changed = true;
+        }
+
         settings.Jobs ??= new List<SyncJob>();
 
         if (settings.Jobs.Count == 0)

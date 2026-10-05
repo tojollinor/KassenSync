@@ -6,6 +6,8 @@ public sealed class AppSettings
 
     public bool GuiAutostart { get; set; } = true;
     public bool CheckForUpdatesOnStart { get; set; } = true;
+    public SuccessNotificationMode SuccessNotificationMode { get; set; } = SuccessNotificationMode.Timed;
+    public int SuccessNotificationSeconds { get; set; } = 3;
     public int RescanIntervalSeconds { get; set; } = 30;
     public int FileStableDelayMilliseconds { get; set; } = 1500;
 
@@ -16,4 +18,11 @@ public sealed class AppSettings
     public string TargetDrive { get; set; } = @"E:\";
     public string TargetSubfolder { get; set; } = "Export";
     public List<string> AllowedExtensions { get; set; } = new() { ".pdf", ".xml", ".csv" };
+}
+
+public enum SuccessNotificationMode
+{
+    Off = 0,
+    Timed = 1,
+    Persistent = 2
 }

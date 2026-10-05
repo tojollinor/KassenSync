@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="OrdnerSync" Icon="Assets/OrdnerSync.ico"
         Height="790" Width="1280" MinHeight="650" MinWidth="1040"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
         WindowStartupLocation="CenterScreen">
     <Grid Margin="18">
         <Grid.RowDefinitions>
@@ -18,7 +20,12 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Image Source="Assets/OrdnerSync.ico" Width="44" Height="44" Margin="0,0,12,0" Stretch="Uniform"/>
+            <Image x:Name="HeaderLogoImage"
+                   Width="44" Height="44"
+                   Margin="0,0,12,0"
+                   Stretch="Uniform"
+                   SnapsToDevicePixels="True"
+                   RenderOptions.BitmapScalingMode="HighQuality"/>
 
             <StackPanel Grid.Column="1">
                 <TextBlock Text="OrdnerSync" FontSize="26" FontWeight="SemiBold"/>
@@ -243,7 +250,40 @@
                     <StackPanel Margin="18" MaxWidth="900" HorizontalAlignment="Left">
                         <TextBlock Text="Allgemein" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
                         <CheckBox x:Name="AutostartCheckBox" Content="OrdnerSync-GUI bei Windows-Anmeldung starten" Margin="0,0,0,8"/>
-                        <CheckBox x:Name="UpdateCheckBox" Content="Beim Start nach Updates suchen" Margin="0,0,0,16"/>
+                        <CheckBox x:Name="UpdateCheckBox" Content="Beim Start nach Updates suchen" Margin="0,0,0,18"/>
+
+                        <TextBlock Text="Erfolgsmeldungen" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                        <TextBlock Text="Fehler bleiben immer sichtbar, bis sie mit OK bestätigt werden."
+                                   Foreground="Gray" Margin="0,0,0,10"/>
+
+                        <Grid Margin="0,0,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="24"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ComboBox x:Name="SuccessNotificationModeComboBox"
+                                      Grid.Column="0"
+                                      SelectionChanged="SuccessNotificationModeComboBox_SelectionChanged"/>
+
+                            <TextBlock Grid.Column="2"
+                                       Text="Anzeigedauer:"
+                                       VerticalAlignment="Center"/>
+
+                            <TextBox x:Name="SuccessNotificationSecondsTextBox"
+                                     Grid.Column="4"
+                                     Width="70"
+                                     VerticalContentAlignment="Center"
+                                     TextAlignment="Right"/>
+
+                            <TextBlock Grid.Column="4"
+                                       Text="Sek."
+                                       Margin="76,0,0,0"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
                             <Button x:Name="SaveSettingsButton" Content="Einstellungen speichern" Padding="16,8" Margin="0,0,8,0" Click="SaveSettingsButton_Click"/>
@@ -271,7 +311,12 @@
             <TabItem Header="Über">
                 <Grid Margin="28">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="620">
-                        <Image Source="Assets/OrdnerSync.ico" Width="112" Height="112" Stretch="Uniform" Margin="0,0,0,18"/>
+                        <Image x:Name="AboutLogoImage"
+                               Width="112" Height="112"
+                               Stretch="Uniform"
+                               Margin="0,0,0,18"
+                               SnapsToDevicePixels="True"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
                         <TextBlock Text="OrdnerSync" FontSize="30" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                         <TextBlock x:Name="AboutVersionText" Margin="0,6,0,16" Foreground="Gray" HorizontalAlignment="Center"/>
                         <TextBlock Text="Synchronisiert Dateien zwischen Ordnern oder USB-Zielen. Einweg oder bidirektional, mit mehreren unabhängigen Jobs."
