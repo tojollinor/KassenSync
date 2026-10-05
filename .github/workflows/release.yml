@@ -42,6 +42,10 @@ jobs:
           }
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Generate confirmed OrdnerSync icon
+        shell: pwsh
+        run: .\\tools\\Generate-OrdnerSyncIcon.ps1
+
       - name: Restore
         run: dotnet restore OrdnerSync.sln
 
