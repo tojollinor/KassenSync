@@ -40,10 +40,10 @@ public partial class PersistentMessageWindow : Window
 
         StatusDot.Fill = kind switch
         {
-            PersistentMessageKind.Success => Brushes.ForestGreen,
-            PersistentMessageKind.Warning => Brushes.Goldenrod,
-            PersistentMessageKind.Error => Brushes.Firebrick,
-            _ => Brushes.DodgerBlue
+            PersistentMessageKind.Success => System.Windows.Media.Brushes.ForestGreen,
+            PersistentMessageKind.Warning => System.Windows.Media.Brushes.Goldenrod,
+            PersistentMessageKind.Error => System.Windows.Media.Brushes.Firebrick,
+            _ => System.Windows.Media.Brushes.DodgerBlue
         };
 
         Closing += OnClosing;
