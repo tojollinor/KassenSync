@@ -1,0 +1,67 @@
+<Window x:Class="KassenSync.App.PersistentMessageWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="OrdnerSync"
+        Icon="Assets/OrdnerSync.ico"
+        Width="540"
+        SizeToContent="Height"
+        MinHeight="230"
+        MaxHeight="520"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Topmost="True"
+        ShowInTaskbar="False">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal">
+            <Ellipse x:Name="StatusDot"
+                     Width="13" Height="13"
+                     Fill="Gray"
+                     Margin="0,4,10,0"
+                     VerticalAlignment="Top"/>
+            <TextBlock x:Name="TitleText"
+                       FontSize="21"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="1"
+                   x:Name="MessageText"
+                   Margin="23,16,0,22"
+                   FontSize="15"
+                   LineHeight="23"
+                   TextWrapping="Wrap"/>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="1"
+                    x:Name="SecondaryButton"
+                    MinWidth="150"
+                    Height="46"
+                    Margin="0,0,10,0"
+                    FontSize="15"
+                    FontWeight="SemiBold"
+                    Visibility="Collapsed"
+                    Click="SecondaryButton_Click"/>
+
+            <Button Grid.Column="2"
+                    x:Name="PrimaryButton"
+                    MinWidth="150"
+                    Height="46"
+                    FontSize="15"
+                    FontWeight="SemiBold"
+                    IsDefault="True"
+                    Click="PrimaryButton_Click"/>
+        </Grid>
+    </Grid>
+</Window>

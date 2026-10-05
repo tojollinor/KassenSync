@@ -72,7 +72,7 @@ public sealed class CopyStateStore
     {
         lock (_gate)
         {
-            if (!_started || !string.Equals(_state.OperationId, operationId, StringComparison.Ordinal)) return;
+            if (!string.Equals(_state.OperationId, operationId, StringComparison.Ordinal)) return;
             _state = _state with
             {
                 IsActive = false, Completed = true, Success = false,
