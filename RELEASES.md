@@ -1,5 +1,15 @@
 # Releases
 
+## 0.3.1
+
+- Darstellungsfehler bei der Anzeigedauer behoben
+- Jobfilter sauber ausgerichtet und mit stabiler Höhe dargestellt
+- Autostart-Beschriftung eindeutig als GUI-/Fenster-Autostart formuliert
+- Hinweis ergänzt, dass der Windows-Dienst unabhängig automatisch startet
+- Updateprüfung sprachlich als Start der Oberfläche präzisiert
+- Logo-Rendering wählt passende ICO-Ebenen statt der fehlerhaften größten Ebene
+
+
 ## 0.3.0
 
 - mehrere unabhängige Sync-Jobs

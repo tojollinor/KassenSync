@@ -68,9 +68,22 @@
                         <Button Grid.Column="1" x:Name="RecopyButton" Content="Erneut verarbeiten" Padding="14,7" Margin="0,0,8,0" Click="RecopyButton_Click"/>
                         <Button Grid.Column="2" x:Name="DeleteIndexedButton" Content="Markierte Einträge löschen" Padding="14,7" Click="DeleteIndexedButton_Click"/>
 
-                        <TextBlock Grid.Column="4" Text="Job:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <ComboBox Grid.Column="5" x:Name="JobFilterComboBox" DisplayMemberPath="Name"
-                                  SelectionChanged="JobFilterComboBox_SelectionChanged"/>
+                        <StackPanel Grid.Column="4"
+                                    Grid.ColumnSpan="2"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="Job:"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0"/>
+                            <ComboBox x:Name="JobFilterComboBox"
+                                      Width="260"
+                                      Height="30"
+                                      DisplayMemberPath="Name"
+                                      VerticalContentAlignment="Center"
+                                      Padding="6,0,4,0"
+                                      Background="White"
+                                      SelectionChanged="JobFilterComboBox_SelectionChanged"/>
+                        </StackPanel>
 
                         <TextBlock Grid.Column="7" x:Name="SelectionText" Text="0 Dateien markiert"
                                    VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="Gray"/>
@@ -249,8 +262,15 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="18" MaxWidth="900" HorizontalAlignment="Left">
                         <TextBlock Text="Allgemein" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
-                        <CheckBox x:Name="AutostartCheckBox" Content="OrdnerSync-GUI bei Windows-Anmeldung starten" Margin="0,0,0,8"/>
-                        <CheckBox x:Name="UpdateCheckBox" Content="Beim Start nach Updates suchen" Margin="0,0,0,18"/>
+                        <CheckBox x:Name="AutostartCheckBox"
+                                  Content="OrdnerSync-Fenster bei Windows-Anmeldung öffnen"
+                                  Margin="0,0,0,4"/>
+                        <TextBlock Text="Der Windows-Dienst startet unabhängig davon automatisch mit Windows."
+                                   Foreground="Gray"
+                                   Margin="22,0,0,10"/>
+                        <CheckBox x:Name="UpdateCheckBox"
+                                  Content="Beim Start der Oberfläche nach Updates suchen"
+                                  Margin="0,0,0,18"/>
 
                         <TextBlock Text="Erfolgsmeldungen" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
                         <TextBlock Text="Fehler bleiben immer sichtbar, bis sie mit OK bestätigt werden."
@@ -262,11 +282,15 @@
                                 <ColumnDefinition Width="24"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="8"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <ComboBox x:Name="SuccessNotificationModeComboBox"
                                       Grid.Column="0"
+                                      Height="30"
+                                      VerticalContentAlignment="Center"
                                       SelectionChanged="SuccessNotificationModeComboBox_SelectionChanged"/>
 
                             <TextBlock Grid.Column="2"
@@ -275,13 +299,13 @@
 
                             <TextBox x:Name="SuccessNotificationSecondsTextBox"
                                      Grid.Column="4"
-                                     Width="70"
+                                     Height="28"
                                      VerticalContentAlignment="Center"
-                                     TextAlignment="Right"/>
+                                     TextAlignment="Right"
+                                     Padding="5,0"/>
 
-                            <TextBlock Grid.Column="4"
+                            <TextBlock Grid.Column="6"
                                        Text="Sek."
-                                       Margin="76,0,0,0"
                                        VerticalAlignment="Center"/>
                         </Grid>
 

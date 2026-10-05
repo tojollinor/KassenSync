@@ -52,9 +52,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        var logo = LogoImageService.GetLargestIconFrame();
-        HeaderLogoImage.Source = logo;
-        AboutLogoImage.Source = logo;
+        HeaderLogoImage.Source = LogoImageService.GetBestIconFrame(48);
+        AboutLogoImage.Source = LogoImageService.GetBestIconFrame(128);
 
         VersionText.Text = $"OrdnerSync {AppVersion.Display}";
         AboutVersionText.Text = $"Version {AppVersion.Display}";
