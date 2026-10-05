@@ -908,7 +908,7 @@ public partial class MainWindow : Window
         UpdateJobStatusSummary();
     }
 
-    private void DeleteJobButton_Click(object sender, RoutedEventArgs e)
+    private async void DeleteJobButton_Click(object sender, RoutedEventArgs e)
     {
         if (JobsGrid.SelectedItem is not SyncJobRow selected)
             return;
@@ -926,7 +926,9 @@ public partial class MainWindow : Window
 
         var answer = System.Windows.MessageBox.Show(
             this,
-            $"Job '{selected.Name}' wirklich aus der Konfiguration entfernen?",
+            $"Job '{selected.Name}' wirklich löschen?\n\n" +
+            "Der Job und alle zugehörigen OrdnerSync-Indexeinträge werden gelöscht. " +
+            "Dateien in Quell- und Zielordnern bleiben unverändert.",
             "Job löschen",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
@@ -934,14 +936,33 @@ public partial class MainWindow : Window
         if (answer != MessageBoxResult.Yes)
             return;
 
-        _jobRows.Remove(selected);
-        JobsGrid.SelectedIndex = Math.Min(
-            JobsGrid.SelectedIndex,
-            _jobRows.Count - 1);
+        DeleteJobButton.IsEnabled = false;
+        try
+        {
+            await _client.SendAsync<object>(
+                IpcMessageTypes.DeleteJob,
+                new DeleteJobRequest(selected.Id));
 
-        RebuildJobFilters();
-        RebuildFileRows();
-        UpdateJobStatusSummary();
+            _settings = await _client.SendAsync<AppSettings>(IpcMessageTypes.GetSettings);
+            LoadSettingsIntoUi(_settings);
+            await RefreshAllAsync(silent: true);
+            FooterStatusText.Text = $"{_allFiles.Count} Datei(en) indexiert";
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                ex.Message,
+                "Job konnte nicht gelöscht werden",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            await RefreshAllAsync(silent: true);
+        }
+        finally
+        {
+            DeleteJobButton.IsEnabled = true;
+        }
     }
 
     private void BrowseJobSourceButton_Click(object sender, RoutedEventArgs e)
