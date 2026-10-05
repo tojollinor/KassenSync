@@ -1,3 +1,4 @@
+using System.IO;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -114,7 +115,7 @@ public sealed class GitHubUpdateService
             Verb = "runas",
             Arguments = "/SILENT /SUPPRESSMSGBOXES /NORESTART /UPDATE"
         };
-        Process.Start(startInfo) ?? throw new InvalidOperationException("Der Installer konnte nicht gestartet werden.");
+        _ = Process.Start(startInfo) ?? throw new InvalidOperationException("Der Installer konnte nicht gestartet werden.");
     }
 
     private static bool TryParseVersion(string tag, out Version version)
