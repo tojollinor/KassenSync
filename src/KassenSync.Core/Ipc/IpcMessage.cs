@@ -36,6 +36,10 @@ public static class IpcMessageTypes
     public const string SaveSettings = "save-settings";
     public const string RecopyFiles = "recopy-files";
     public const string DeleteFiles = "delete-files";
+    public const string GetJobRuntimeStates = "get-job-runtime-states";
+    public const string DeferJob = "defer-job";
+    public const string ResumeJob = "resume-job";
+    public const string DeclineJobResume = "decline-job-resume";
     public const string CopyProgress = "copy-progress";
     public const string CopyCompleted = "copy-completed";
     public const string SettingsChanged = "settings-changed";
@@ -44,3 +48,4 @@ public static class IpcMessageTypes
 public sealed record ServiceStatus(bool Running, DateTime UtcNow);
 public sealed record RecopyRequest(IReadOnlyList<long> FileIds);
 public sealed record DeleteFilesRequest(IReadOnlyList<long> FileIds);
+public sealed record JobControlRequest(string JobId);

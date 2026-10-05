@@ -12,6 +12,7 @@ namespace KassenSync.Service;
 public sealed class IpcServerHostedService(
     IndexDatabase database,
     SettingsStore settingsStore,
+    JobRuntimeStateStore runtimeStateStore,
     ILogger<IpcServerHostedService> logger) : BackgroundService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -101,6 +102,8 @@ public sealed class IpcServerHostedService(
                 return IpcResponse.Ok(await database.GetAllAsync(cancellationToken));
             case IpcMessageTypes.GetSettings:
                 return IpcResponse.Ok(await settingsStore.LoadAsync(cancellationToken));
+            case IpcMessageTypes.GetJobRuntimeStates:
+                return IpcResponse.Ok(runtimeStateStore.GetAll());
             case IpcMessageTypes.SaveSettings:
             {
                 var settings = request.Payload.Deserialize<AppSettings>(JsonOptions)
@@ -122,6 +125,27 @@ public sealed class IpcServerHostedService(
                              ?? throw new InvalidOperationException("Dateiauswahl konnte nicht gelesen werden.");
                 var deleted = await database.DeleteByIdsAsync(delete.FileIds, cancellationToken);
                 return IpcResponse.Ok(new { deleted });
+            }
+            case IpcMessageTypes.DeferJob:
+            {
+                var control = request.Payload.Deserialize<JobControlRequest>(JsonOptions)
+                              ?? throw new InvalidOperationException("Job konnte nicht gelesen werden.");
+                runtimeStateStore.Defer(control.JobId);
+                return IpcResponse.Ok(runtimeStateStore.Get(control.JobId));
+            }
+            case IpcMessageTypes.ResumeJob:
+            {
+                var control = request.Payload.Deserialize<JobControlRequest>(JsonOptions)
+                              ?? throw new InvalidOperationException("Job konnte nicht gelesen werden.");
+                runtimeStateStore.Resume(control.JobId);
+                return IpcResponse.Ok(runtimeStateStore.Get(control.JobId));
+            }
+            case IpcMessageTypes.DeclineJobResume:
+            {
+                var control = request.Payload.Deserialize<JobControlRequest>(JsonOptions)
+                              ?? throw new InvalidOperationException("Job konnte nicht gelesen werden.");
+                runtimeStateStore.Decline(control.JobId);
+                return IpcResponse.Ok(runtimeStateStore.Get(control.JobId));
             }
             default:
                 return IpcResponse.Fail($"Unbekannter IPC-Befehl: {request.Type}");
