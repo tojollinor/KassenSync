@@ -143,10 +143,10 @@ public sealed class SyncJobRow : INotifyPropertyChanged
 
     public System.Windows.Media.Brush StatusBrush => StatusText switch
     {
-        "Bereit" => Brushes.ForestGreen,
-        "Inaktiv" => Brushes.Gray,
-        "Wartet auf USB" => Brushes.Goldenrod,
-        _ => Brushes.Firebrick
+        "Bereit" => System.Windows.Media.Brushes.ForestGreen,
+        "Inaktiv" => System.Windows.Media.Brushes.Gray,
+        "Wartet auf USB" => System.Windows.Media.Brushes.Goldenrod,
+        _ => System.Windows.Media.Brushes.Firebrick
     };
 
     public SyncJob ToModel() => new()

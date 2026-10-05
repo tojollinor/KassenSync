@@ -12,13 +12,13 @@ public partial class CopyResultWindow : Window
         if (state.Success)
         {
             TitleText.Text = "✓ Kopiervorgang erfolgreich";
-            TitleText.Foreground = Brushes.ForestGreen;
+            TitleText.Foreground = System.Windows.Media.Brushes.ForestGreen;
             MessageText.Text = state.Message;
         }
         else
         {
             TitleText.Text = "✗ Kopiervorgang fehlgeschlagen";
-            TitleText.Foreground = Brushes.Firebrick;
+            TitleText.Foreground = System.Windows.Media.Brushes.Firebrick;
             MessageText.Text = string.IsNullOrWhiteSpace(state.Error) ? state.Message : state.Error;
         }
     }

@@ -85,7 +85,7 @@ public partial class MainWindow : Window
         Closing += MainWindow_Closing;
         Closed += MainWindow_Closed;
         StateChanged += MainWindow_StateChanged;
-        Application.Current.SessionEnding += (_, _) => _allowClose = true;
+        System.Windows.Application.Current.SessionEnding += (_, _) => _allowClose = true;
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -118,7 +118,7 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)
     {
-        if (_allowClose || Application.Current.Dispatcher.HasShutdownStarted)
+        if (_allowClose || System.Windows.Application.Current.Dispatcher.HasShutdownStarted)
             return;
 
         e.Cancel = true;
@@ -151,7 +151,7 @@ public partial class MainWindow : Window
             _trayIcon?.Dispose();
             _trayIcon = null;
             Close();
-            Application.Current.Shutdown();
+            System.Windows.Application.Current.Shutdown();
         });
     }
 
@@ -221,8 +221,8 @@ public partial class MainWindow : Window
             await _client.SendAsync<ServiceStatus>(IpcMessageTypes.GetStatus);
 
             ServiceStatusText.Text = "Dienst läuft";
-            ServiceStatusText.Foreground = Brushes.ForestGreen;
-            ServiceStatusDot.Fill = Brushes.ForestGreen;
+            ServiceStatusText.Foreground = System.Windows.Media.Brushes.ForestGreen;
+            ServiceStatusDot.Fill = System.Windows.Media.Brushes.ForestGreen;
 
             var files = await _client.SendAsync<List<IndexedFile>>(IpcMessageTypes.GetFiles);
             _allFiles = files;
@@ -245,12 +245,12 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             ServiceStatusText.Text = "Dienst nicht erreichbar";
-            ServiceStatusText.Foreground = Brushes.Firebrick;
-            ServiceStatusDot.Fill = Brushes.Firebrick;
+            ServiceStatusText.Foreground = System.Windows.Media.Brushes.Firebrick;
+            ServiceStatusDot.Fill = System.Windows.Media.Brushes.Firebrick;
             FooterStatusText.Text = ex.Message;
 
             if (!silent)
-                MessageBox.Show(
+                System.Windows.MessageBox.Show(
                     this,
                     ex.Message,
                     "OrdnerSync",
@@ -311,20 +311,20 @@ public partial class MainWindow : Window
 
         if (_jobRows.Count == 0 || active.Length == 0)
         {
-            JobsStatusDot.Fill = Brushes.Gray;
+            JobsStatusDot.Fill = System.Windows.Media.Brushes.Gray;
         }
         else if (active.Any(x =>
                      x.StatusText is "Quelle fehlt" or "Ziel nicht verfügbar"))
         {
-            JobsStatusDot.Fill = Brushes.Firebrick;
+            JobsStatusDot.Fill = System.Windows.Media.Brushes.Firebrick;
         }
         else if (active.Any(x => x.StatusText == "Wartet auf USB"))
         {
-            JobsStatusDot.Fill = Brushes.Goldenrod;
+            JobsStatusDot.Fill = System.Windows.Media.Brushes.Goldenrod;
         }
         else
         {
-            JobsStatusDot.Fill = Brushes.ForestGreen;
+            JobsStatusDot.Fill = System.Windows.Media.Brushes.ForestGreen;
         }
 
         _trayIcon?.UpdateText($"{active.Length} aktive Jobs");
@@ -451,7 +451,7 @@ public partial class MainWindow : Window
 
         if (selected.Length == 0)
         {
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 this,
                 "Bitte mindestens eine Datei markieren.",
                 "OrdnerSync",
@@ -473,7 +473,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 this,
                 ex.Message,
                 "Erneute Verarbeitung fehlgeschlagen",
@@ -488,7 +488,7 @@ public partial class MainWindow : Window
 
         if (selected.Length == 0)
         {
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 this,
                 "Bitte mindestens einen Eintrag markieren.",
                 "OrdnerSync",
@@ -497,7 +497,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var result = MessageBox.Show(
+        var result = System.Windows.MessageBox.Show(
             this,
             $"{selected.Length} markierte(n) Eintrag/Einträge aus dem OrdnerSync-Index entfernen?\n\n" +
             "Die Quelldateien werden nicht gelöscht. Sind sie noch vorhanden, können sie bei einem späteren Scan erneut erkannt werden.",
@@ -524,7 +524,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 this,
                 ex.Message,
                 "Einträge konnten nicht gelöscht werden",
@@ -569,7 +569,7 @@ public partial class MainWindow : Window
 
         if (_jobRows.Count <= 1)
         {
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 this,
                 "Mindestens ein Sync-Job muss vorhanden bleiben.",
                 "OrdnerSync",
@@ -578,7 +578,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var answer = MessageBox.Show(
+        var answer = System.Windows.MessageBox.Show(
             this,
             $"Job '{selected.Name}' wirklich aus der Konfiguration entfernen?",
             "Job löschen",
@@ -656,7 +656,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 this,
                 ex.Message,
                 "Einstellungen konnten nicht gespeichert werden",
@@ -707,7 +707,7 @@ public partial class MainWindow : Window
 
                 if (manual)
                 {
-                    MessageBox.Show(
+                    System.Windows.MessageBox.Show(
                         this,
                         $"OrdnerSync {AppVersion.Display} ist bereits aktuell.",
                         "OrdnerSync Update",
@@ -718,7 +718,7 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var answer = MessageBox.Show(
+            var answer = System.Windows.MessageBox.Show(
                 this,
                 $"OrdnerSync {update.Version} ist verfügbar.\n\nJetzt herunterladen und installieren?",
                 "OrdnerSync Update",
@@ -750,7 +750,7 @@ public partial class MainWindow : Window
             _allowClose = true;
             _trayIcon?.Dispose();
             _trayIcon = null;
-            Application.Current.Shutdown();
+            System.Windows.Application.Current.Shutdown();
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
         {
@@ -759,7 +759,7 @@ public partial class MainWindow : Window
 
             if (manual)
             {
-                MessageBox.Show(
+                System.Windows.MessageBox.Show(
                     this,
                     "Die Administratorabfrage wurde abgebrochen.",
                     "OrdnerSync Update",
@@ -774,7 +774,7 @@ public partial class MainWindow : Window
 
             if (manual)
             {
-                MessageBox.Show(
+                System.Windows.MessageBox.Show(
                     this,
                     ex.Message,
                     "OrdnerSync Update",
@@ -817,24 +817,24 @@ public partial class MainWindow : Window
 
             if (!info.Installed)
             {
-                ServiceSettingsStatusDot.Fill = Brushes.Firebrick;
+                ServiceSettingsStatusDot.Fill = System.Windows.Media.Brushes.Firebrick;
             }
             else if (info.StatusText.Contains(
                          "Läuft",
                          StringComparison.OrdinalIgnoreCase))
             {
-                ServiceSettingsStatusDot.Fill = Brushes.ForestGreen;
+                ServiceSettingsStatusDot.Fill = System.Windows.Media.Brushes.ForestGreen;
             }
             else
             {
-                ServiceSettingsStatusDot.Fill = Brushes.Goldenrod;
+                ServiceSettingsStatusDot.Fill = System.Windows.Media.Brushes.Goldenrod;
             }
         }
         catch (Exception ex)
         {
             ServiceInstalledText.Text = "Installiert: unbekannt";
             ServiceStateText.Text = $"Status: {ex.Message}";
-            ServiceSettingsStatusDot.Fill = Brushes.Firebrick;
+            ServiceSettingsStatusDot.Fill = System.Windows.Media.Brushes.Firebrick;
         }
     }
 
@@ -853,7 +853,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 this,
                 ex.Message,
                 "OrdnerSync Dienst",

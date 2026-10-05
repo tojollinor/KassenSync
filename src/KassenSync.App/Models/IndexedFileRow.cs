@@ -45,14 +45,14 @@ public sealed class IndexedFileRow : INotifyPropertyChanged
 
     public System.Windows.Media.Brush StatusBrush => Source.Status switch
     {
-        FileTransferStatus.Copied => Brushes.ForestGreen,
-        FileTransferStatus.Indexed => Brushes.Goldenrod,
-        FileTransferStatus.WaitingForTarget => Brushes.Goldenrod,
-        FileTransferStatus.Copying => Brushes.DodgerBlue,
-        FileTransferStatus.Failed => Brushes.Firebrick,
-        FileTransferStatus.SourceMissing => Brushes.Firebrick,
-        FileTransferStatus.Conflict => Brushes.Firebrick,
-        _ => Brushes.Gray
+        FileTransferStatus.Copied => System.Windows.Media.Brushes.ForestGreen,
+        FileTransferStatus.Indexed => System.Windows.Media.Brushes.Goldenrod,
+        FileTransferStatus.WaitingForTarget => System.Windows.Media.Brushes.Goldenrod,
+        FileTransferStatus.Copying => System.Windows.Media.Brushes.DodgerBlue,
+        FileTransferStatus.Failed => System.Windows.Media.Brushes.Firebrick,
+        FileTransferStatus.SourceMissing => System.Windows.Media.Brushes.Firebrick,
+        FileTransferStatus.Conflict => System.Windows.Media.Brushes.Firebrick,
+        _ => System.Windows.Media.Brushes.Gray
     };
 
     public string Error => Source.LastError ?? string.Empty;
