@@ -156,7 +156,15 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridCheckBoxColumn Header="Aktiv" Binding="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTemplateColumn Header="Aktiv" Width="55">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Modus" Binding="{Binding ModeText}" Width="110" IsReadOnly="True"/>
                             </DataGrid.Columns>
@@ -193,7 +201,7 @@
 
                                 <TextBlock Text="Zieltyp" Margin="0,0,0,4"/>
                                 <ComboBox x:Name="TargetTypeComboBox"
-                                          SelectedItem="{Binding TargetType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          SelectedValue="{Binding TargetType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Margin="0,0,0,12"/>
 
                                 <TextBlock Text="Zielordner / USB-Pfad" Margin="0,0,0,4"/>
@@ -208,7 +216,7 @@
 
                                 <TextBlock Text="Richtung" Margin="0,0,0,4"/>
                                 <ComboBox x:Name="SyncModeComboBox"
-                                          SelectedItem="{Binding Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          SelectedValue="{Binding Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Margin="0,0,0,12"/>
 
                                 <CheckBox Content="Unterordner einbeziehen"
