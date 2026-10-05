@@ -1,5 +1,13 @@
 # Releases
 
+## 0.3.5
+
+- Windows-Icon mit zusätzlicher Sicherheitszone erzeugt, damit das Motiv in kleinen Iconstufen vollständig sichtbar bleibt
+- halbtransparente Pixel innerhalb der Logoform weiterhin vollständig deckend erzeugt
+- Hauptfenster verwendet konsistent das in der Anwendung eingebettete Windows-Icon statt eines separaten WPF-ICO-Ladevorgangs
+- Desktop-, Taskleisten-, Fenster- und Installer-Symbol stammen weiterhin aus derselben reproduzierbaren ICO-Pipeline
+
+
 ## 0.3.4
 
 - Beim Löschen eines Sync-Jobs werden dessen OrdnerSync-Indexeinträge vollständig entfernt
