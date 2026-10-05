@@ -141,7 +141,7 @@ public sealed class SyncJobRow : INotifyPropertyChanged
         }
     }
 
-    public Brush StatusBrush => StatusText switch
+    public System.Windows.Media.Brush StatusBrush => StatusText switch
     {
         "Bereit" => Brushes.ForestGreen,
         "Inaktiv" => Brushes.Gray,

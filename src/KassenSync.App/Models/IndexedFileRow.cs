@@ -43,7 +43,7 @@ public sealed class IndexedFileRow : INotifyPropertyChanged
         _ => Source.Status.ToString()
     };
 
-    public Brush StatusBrush => Source.Status switch
+    public System.Windows.Media.Brush StatusBrush => Source.Status switch
     {
         FileTransferStatus.Copied => Brushes.ForestGreen,
         FileTransferStatus.Indexed => Brushes.Goldenrod,
