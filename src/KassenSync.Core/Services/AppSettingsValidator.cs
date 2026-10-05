@@ -6,37 +6,41 @@ public static class AppSettingsValidator
 {
     public static void Validate(AppSettings settings)
     {
-        if (string.IsNullOrWhiteSpace(settings.SourceFolder))
-            throw new InvalidOperationException("Bitte einen Quellordner angeben.");
+        SettingsMigration.Normalize(settings);
 
-        if (!Path.IsPathFullyQualified(settings.SourceFolder))
-            throw new InvalidOperationException("Der Quellordner muss ein vollständiger Pfad sein.");
+        if (settings.Jobs.Count == 0)
+            throw new InvalidOperationException("Mindestens ein Sync-Job muss vorhanden sein.");
 
-        if (string.IsNullOrWhiteSpace(settings.TargetDrive))
-            throw new InvalidOperationException("Bitte ein Ziellaufwerk angeben.");
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var job in settings.Jobs)
+        {
+            if (string.IsNullOrWhiteSpace(job.Name))
+                throw new InvalidOperationException("Jeder Sync-Job benötigt einen Namen.");
 
-        var drive = settings.TargetDrive.Trim();
-        if (drive.Length == 2 && drive[1] == ':')
-            drive += Path.DirectorySeparatorChar;
-        var full = Path.GetFullPath(drive);
-        var root = Path.GetPathRoot(full);
-        if (string.IsNullOrWhiteSpace(root) || !string.Equals(full.TrimEnd('\\','/'), root.TrimEnd('\\','/'), StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Das Ziellaufwerk muss z. B. als E:\\ angegeben werden.");
+            if (!names.Add(job.Name.Trim()))
+                throw new InvalidOperationException($"Der Jobname '{job.Name}' ist mehrfach vorhanden.");
 
-        if (settings.RescanIntervalSeconds < 5)
-            settings.RescanIntervalSeconds = 5;
-        if (settings.FileStableDelayMilliseconds < 250)
-            settings.FileStableDelayMilliseconds = 250;
+            if (string.IsNullOrWhiteSpace(job.SourceFolder) || !Path.IsPathFullyQualified(job.SourceFolder))
+                throw new InvalidOperationException($"Beim Job '{job.Name}' muss die Quelle ein vollständiger Ordnerpfad sein.");
 
-        settings.SourceFolder = Path.GetFullPath(settings.SourceFolder.Trim());
-        settings.TargetDrive = root;
-        settings.TargetSubfolder = settings.TargetSubfolder.Trim().Trim('\\','/');
-        settings.AllowedExtensions = settings.AllowedExtensions
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .Select(x => x.StartsWith('.') ? x : "." + x)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+            if (string.IsNullOrWhiteSpace(job.TargetFolder) || !Path.IsPathFullyQualified(job.TargetFolder))
+                throw new InvalidOperationException($"Beim Job '{job.Name}' muss das Ziel ein vollständiger Ordnerpfad sein.");
+
+            var source = Path.GetFullPath(job.SourceFolder.Trim())
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var target = Path.GetFullPath(job.TargetFolder.Trim())
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            if (string.Equals(source, target, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Beim Job '{job.Name}' dürfen Quelle und Ziel nicht identisch sein.");
+
+            job.Name = job.Name.Trim();
+            job.SourceFolder = source;
+            job.TargetFolder = target;
+            job.AllowedExtensions = SettingsMigration.NormalizeExtensions(job.AllowedExtensions);
+            job.PropagateDeletes = false;
+        }
+
+        SettingsMigration.Normalize(settings);
     }
 }

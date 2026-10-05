@@ -3,6 +3,8 @@ namespace KassenSync.Core.Models;
 public sealed class IndexedFile
 {
     public long Id { get; set; }
+    public string JobId { get; set; } = SyncJob.LegacyJobId;
+    public SyncSide SourceSide { get; set; } = SyncSide.A;
     public string FileName { get; set; } = string.Empty;
     public string RelativePath { get; set; } = string.Empty;
     public string FullSourcePath { get; set; } = string.Empty;
@@ -22,5 +24,6 @@ public enum FileTransferStatus
     Copying = 2,
     Copied = 3,
     Failed = 4,
-    SourceMissing = 5
+    SourceMissing = 5,
+    Conflict = 6
 }
