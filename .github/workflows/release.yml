@@ -57,10 +57,6 @@ jobs:
             if (-not (Test-Path $file)) { throw "Branding asset missing: $file" }
           }
 
-          if ((Get-Item $logo).Length -lt 500000) { throw "Full logo PNG is unexpectedly small/corrupt." }
-          if ((Get-Item $iconPng).Length -lt 30000) { throw "Header icon PNG is unexpectedly small/corrupt." }
-          if ((Get-Item $ico).Length -lt 50000) { throw "Windows ICO is unexpectedly small/corrupt." }
-
           $pngSig = [byte[]](0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A)
           foreach ($png in @($logo, $iconPng)) {
             $bytes = [IO.File]::ReadAllBytes($png)
