@@ -13,6 +13,7 @@ builder.Services.AddSingleton<FileCopyService>();
 builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<FolderWatchHostedService>();
 builder.Services.AddHostedService<CopyQueueHostedService>();
+builder.Services.AddHostedService<IpcServerHostedService>();
 
 var host = builder.Build();
 await host.Services.GetRequiredService<IndexDatabase>().InitializeAsync();

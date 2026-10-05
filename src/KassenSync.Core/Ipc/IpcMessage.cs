@@ -2,11 +2,30 @@ using System.Text.Json;
 
 namespace KassenSync.Core.Ipc;
 
-public sealed class IpcMessage
+public sealed class IpcRequest
 {
     public string Type { get; set; } = string.Empty;
-    public string? RequestId { get; set; }
     public JsonElement Payload { get; set; }
+}
+
+public sealed class IpcResponse
+{
+    public bool Success { get; set; }
+    public string? Error { get; set; }
+    public JsonElement Payload { get; set; }
+
+    public static IpcResponse Ok<T>(T payload) => new()
+    {
+        Success = true,
+        Payload = JsonSerializer.SerializeToElement(payload)
+    };
+
+    public static IpcResponse Fail(string error) => new()
+    {
+        Success = false,
+        Error = error,
+        Payload = JsonSerializer.SerializeToElement<object?>(null)
+    };
 }
 
 public static class IpcMessageTypes
@@ -20,3 +39,6 @@ public static class IpcMessageTypes
     public const string CopyCompleted = "copy-completed";
     public const string SettingsChanged = "settings-changed";
 }
+
+public sealed record ServiceStatus(bool Running, DateTime UtcNow);
+public sealed record RecopyRequest(IReadOnlyList<long> FileIds);
