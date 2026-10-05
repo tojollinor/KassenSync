@@ -4,32 +4,61 @@
              SnapsToDevicePixels="True"
              UseLayoutRounding="True">
     <Viewbox Stretch="Uniform">
-        <Canvas Width="128" Height="128">
-            <Path Data="M14,34 L47,34 L57,45 L110,45 Q118,45 118,53 L118,103 Q118,112 109,112 L19,112 Q10,112 10,103 L10,43 Q10,34 14,34 Z"
+        <Canvas Width="256" Height="256">
+            <Path Data="M36,50 L110,50 L136,67 L188,67 L188,86 L36,86 Z"
+                  Fill="#1779C9"/>
+
+            <Path Data="M38,68 H218
+                        C228,68 236,76 236,86
+                        V200
+                        C236,210 228,218 218,218
+                        H38
+                        C28,218 20,210 20,200
+                        V86
+                        C20,76 28,68 38,68 Z"
+                  Fill="#2399E2"
                   Stroke="#1779C9"
-                  StrokeThickness="4">
-                <Path.Fill>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#55C6FF" Offset="0"/>
-                        <GradientStop Color="#1689E8" Offset="1"/>
-                    </LinearGradientBrush>
-                </Path.Fill>
-            </Path>
+                  StrokeThickness="7"/>
 
-            <Path Data="M18,25 L54,25 Q60,25 63,30 L70,40 L109,40 Q114,40 117,45 L57,45 L47,34 L18,34 Z"
-                  Fill="#147AC7"
-                  Stroke="#0F68AD"
-                  StrokeThickness="3"/>
+            <Path Data="M44,88 H212
+                        C220,88 227,95 227,103
+                        V192
+                        C227,200 220,207 212,207
+                        H44
+                        C36,207 29,200 29,192
+                        V103
+                        C29,95 36,88 44,88 Z"
+                  Fill="#37ABEB"/>
 
-            <Ellipse Canvas.Left="34" Canvas.Top="49"
-                     Width="60" Height="50"
-                     Fill="#2A8FD8"/>
+            <Rectangle Canvas.Left="29"
+                       Canvas.Top="160"
+                       Width="198"
+                       Height="47"
+                       Fill="#1F8BDC"/>
 
-            <Path Data="M44,80 C48,62 69,55 84,64 L78,57 L85,54 L99,70 L83,82 L79,75 L85,70 C74,62 58,66 53,79 Z"
+            <Path Data="M81,154
+                        C91,123 118,108 148,113
+                        C163,115 176,122 185,132"
+                  Stroke="White"
+                  StrokeThickness="16"
+                  StrokeStartLineCap="Round"
+                  StrokeEndLineCap="Round"
+                  Fill="Transparent"/>
+
+            <Path Data="M175,103 L205,122 L178,143 Z"
                   Fill="White"/>
 
-            <Path Data="M87,78 C83,96 62,103 47,94 L53,101 L46,104 L32,88 L48,76 L52,83 L46,88 C57,96 73,92 78,79 Z"
-                  Fill="#BDEEFF"/>
+            <Path Data="M175,163
+                        C165,194 138,209 108,204
+                        C93,202 80,195 71,185"
+                  Stroke="White"
+                  StrokeThickness="16"
+                  StrokeStartLineCap="Round"
+                  StrokeEndLineCap="Round"
+                  Fill="Transparent"/>
+
+            <Path Data="M81,191 L51,172 L78,151 Z"
+                  Fill="White"/>
         </Canvas>
     </Viewbox>
 </UserControl>

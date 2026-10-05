@@ -2,7 +2,8 @@
 
 ## 0.3.3
 
-- neues sauberes Mehrgrößen-ICO für Desktop, Taskleiste, Fenster und Installer
+- Windows-ICO wird reproduzierbar aus dem OrdnerSync-Logo erzeugt
+- Desktop, Taskleiste, Fenster und Installer verwenden dieselbe Logoform
 - halbtransparente Flächen im eigentlichen Logo entfernt
 - Meldungsfenster rahmenlos dargestellt
 - Info-, Erfolgs-, USB- und Fehlermeldungen in ihren Fenstern zentriert
