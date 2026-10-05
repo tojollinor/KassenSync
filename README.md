@@ -22,11 +22,13 @@ Bereits erfolgreich ausgegebene Dateien werden nicht automatisch erneut kopiert,
 - manuelle Wiederausgabe markierter Dateien
 - Einstellungsseite für Quelle, Unterordner, Ziel, Dateitypen und Updateprüfung
 - konfigurierbarer GUI-Autostart per aktuellem Windows-Benutzer
-- Named-Pipe-Kommunikation mit ACL zwischen normalem Benutzer und LocalSystem-Dienst
+- Named-Pipe-Kommunikation zwischen GUI und Dienst
+- Topmost-WPF-Kopierfenster mit Live-Fortschritt
+- drei Sekunden sichtbare Erfolg-/Fehlermeldung nach einem Kopiervorgang
+- fehlendes Zielmedium erzeugt keine Popup-Schleife, sondern bleibt im Wartestatus
 
 ## Noch geplant
 
-- Topmost-Kopierfortschritt und 3-Sekunden-Erfolg-/Fehlermeldung
 - Auto-Update direkt über GitHub Releases
 - Installer und GitHub-Actions-Releasepipeline
 
@@ -36,4 +38,4 @@ Bereits erfolgreich ausgegebene Dateien werden nicht automatisch erneut kopiert,
 - `KassenSync.Service`: Windows-Dienst, Watcher, Indexierung, Kopierwarteschlange und IPC-Server
 - `KassenSync.App`: WPF-GUI und IPC-Client
 
-Der Windows-Dienst zeigt selbst keine Fenster. Benutzerinteraktion findet ausschließlich in der WPF-GUI statt.
+Der Windows-Dienst zeigt selbst keine Fenster. Die GUI liest den Kopierfortschritt aus einem atomar aktualisierten Status unter `%ProgramData%\\KassenSync` und zeigt ihn als Topmost-WPF-Fenster an.

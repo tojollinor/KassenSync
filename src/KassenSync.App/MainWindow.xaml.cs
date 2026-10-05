@@ -14,19 +14,34 @@ namespace KassenSync.App;
 public partial class MainWindow : Window
 {
     private readonly IpcClient _client = new();
+    private readonly CopyStateReader _copyStateReader = new();
     private readonly ObservableCollection<IndexedFileRow> _rows = new();
     private readonly DispatcherTimer _refreshTimer;
+    private readonly DispatcherTimer _copyStateTimer;
     private AppSettings? _settings;
     private bool _refreshing;
+    private bool _copyPolling;
+    private CopyProgressWindow? _copyProgressWindow;
+    private string? _lastCompletedOperationId;
 
     public MainWindow()
     {
         InitializeComponent();
         FilesGrid.ItemsSource = _rows;
+
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _refreshTimer.Tick += async (_, _) => await RefreshAllAsync(silent: true);
+
+        _copyStateTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+        _copyStateTimer.Tick += async (_, _) => await PollCopyStateAsync();
+
         Loaded += MainWindow_Loaded;
-        Closed += (_, _) => _refreshTimer.Stop();
+        Closed += (_, _) =>
+        {
+            _refreshTimer.Stop();
+            _copyStateTimer.Stop();
+            if (_copyProgressWindow?.IsVisible == true) _copyProgressWindow.Close();
+        };
 
         if (Environment.GetCommandLineArgs().Any(x => string.Equals(x, "--autostart", StringComparison.OrdinalIgnoreCase)))
             WindowState = WindowState.Minimized;
@@ -36,7 +51,53 @@ public partial class MainWindow : Window
     {
         PopulateDrives();
         await RefreshAllAsync(silent: false);
+        await PollCopyStateAsync();
         _refreshTimer.Start();
+        _copyStateTimer.Start();
+    }
+
+    private async Task PollCopyStateAsync()
+    {
+        if (_copyPolling) return;
+        _copyPolling = true;
+        try
+        {
+            var state = await _copyStateReader.ReadAsync();
+
+            if (state.IsActive)
+            {
+                if (_copyProgressWindow is null || !_copyProgressWindow.IsLoaded)
+                    _copyProgressWindow = new CopyProgressWindow();
+                _copyProgressWindow.UpdateState(state);
+                return;
+            }
+
+            if (_copyProgressWindow is not null)
+            {
+                if (_copyProgressWindow.IsVisible) _copyProgressWindow.Close();
+                _copyProgressWindow = null;
+            }
+
+            if (!state.Completed || string.IsNullOrWhiteSpace(state.OperationId) ||
+                string.Equals(_lastCompletedOperationId, state.OperationId, StringComparison.Ordinal))
+                return;
+
+            _lastCompletedOperationId = state.OperationId;
+            if (DateTime.UtcNow - state.UpdatedAtUtc > TimeSpan.FromSeconds(10))
+                return;
+
+            var resultWindow = new CopyResultWindow(state);
+            await resultWindow.ShowForAsync(TimeSpan.FromSeconds(3));
+            await RefreshAllAsync(silent: true);
+        }
+        catch
+        {
+            // Fortschrittsanzeige darf die Haupt-GUI niemals beeinträchtigen.
+        }
+        finally
+        {
+            _copyPolling = false;
+        }
     }
 
     private async Task RefreshAllAsync(bool silent)

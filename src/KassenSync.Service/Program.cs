@@ -10,6 +10,7 @@ builder.Services.AddSingleton<FileStabilityService>();
 builder.Services.AddSingleton<FolderIndexer>();
 builder.Services.AddSingleton<TargetPathService>();
 builder.Services.AddSingleton<FileCopyService>();
+builder.Services.AddSingleton<CopyStateStore>();
 builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<FolderWatchHostedService>();
 builder.Services.AddHostedService<CopyQueueHostedService>();
