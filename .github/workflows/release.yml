@@ -42,6 +42,10 @@ jobs:
           }
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Generate approved branding icons
+        shell: pwsh
+        run: .\\tools\\Generate-OrdnerSyncIcon.ps1
+
       - name: Verify branding assets
         shell: pwsh
         run: |
