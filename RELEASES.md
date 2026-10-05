@@ -1,5 +1,15 @@
 # Releases
 
+## 0.3.4
+
+- Beim Löschen eines Sync-Jobs werden dessen OrdnerSync-Indexeinträge vollständig entfernt
+- Warteschlangen-, USB-Warte- und bidirektionale Sync-Baseline-Daten des Jobs werden bereinigt
+- Verwaiste jobbezogene Index- und Laufzeitdaten werden beim Dienststart automatisch entfernt
+- Jobliste, Dateiliste, Filter und Indexzähler aktualisieren sich unmittelbar nach der Löschung
+- Bestätigungsdialog stellt klar, dass Dateien in Quell- und Zielordnern nicht gelöscht werden
+- Ein später neu angelegter Job mit denselben Pfaden kann Dateien wieder neu indexieren und verarbeiten
+
+
 ## 0.3.3
 
 - Windows-ICO wird reproduzierbar aus dem OrdnerSync-Logo erzeugt
