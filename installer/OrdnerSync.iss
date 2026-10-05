@@ -32,6 +32,7 @@ VersionInfoVersion={#MyAppVersion}
 VersionInfoProductName=OrdnerSync
 VersionInfoDescription=OrdnerSync Setup
 SetupLogging=yes
+ChangesAssociations=yes
 
 [Files]
 Source: "..\artifacts\publish\app\*"; DestDir: "{app}\App"; Flags: ignoreversion recursesubdirs createallsubdirs
