@@ -1,5 +1,14 @@
 # Releases
 
+## 0.3.7
+
+- GUI-Logo vollständig als native WPF-Vektorgrafik neu aufgebaut
+- unscharfes Hochskalieren kleiner ICO-Frames in der Oberfläche entfernt
+- fehlerhafte ICO-zu-PNG-Konvertierung und die dadurch entstehenden Farbpixel entfernt
+- Hauptansicht und Über-Seite verwenden dieselbe skalierbare Vektorgrafik
+- Windows-ICO bleibt ausschließlich für Titelleiste, Desktop, Taskleiste, Tray und Installer zuständig
+
+
 ## 0.3.6
 
 - ursprüngliches OrdnerSync-Logo wieder als verbindliche Mastergrafik verwendet
