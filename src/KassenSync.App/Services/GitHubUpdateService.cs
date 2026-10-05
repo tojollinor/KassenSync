@@ -1,5 +1,5 @@
-using System.IO;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -10,35 +10,30 @@ namespace KassenSync.App.Services;
 
 public sealed class GitHubUpdateService
 {
-    private const string LatestReleaseApi = "https://api.github.com/repos/tojollinor/KassenSync/releases/latest";
-    private const string SetupAssetName = "KassenSync-Setup.exe";
-    private const string ChecksumAssetName = "KassenSync-Setup.exe.sha256";
+    private const string LatestReleaseApi = "https://api.github.com/repos/tojollinor/OrdnerSync/releases/latest";
+    private const string SetupAssetName = "OrdnerSync-Setup.exe";
+    private const string ChecksumAssetName = "OrdnerSync-Setup.exe.sha256";
     private readonly HttpClient _httpClient;
 
     public GitHubUpdateService()
     {
         _httpClient = new HttpClient();
-        _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("KassenSync", AppVersion.Display));
+        _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("OrdnerSync", AppVersion.Display));
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
     }
 
     public async Task<UpdateInfo?> CheckForUpdateAsync(CancellationToken cancellationToken = default)
     {
         using var response = await _httpClient.GetAsync(LatestReleaseApi, cancellationToken);
-        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-            return null;
-
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         response.EnsureSuccessStatusCode();
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         var root = document.RootElement;
-
         var tag = root.GetProperty("tag_name").GetString() ?? string.Empty;
         if (!TryParseVersion(tag, out var releaseVersion))
             throw new InvalidOperationException($"Ungültige Release-Version: {tag}");
-
-        if (releaseVersion <= AppVersion.Current)
-            return null;
+        if (releaseVersion <= AppVersion.Current) return null;
 
         string? setupUrl = null;
         string? checksumUrl = null;
@@ -49,23 +44,17 @@ public sealed class GitHubUpdateService
             if (string.Equals(name, SetupAssetName, StringComparison.OrdinalIgnoreCase)) setupUrl = url;
             if (string.Equals(name, ChecksumAssetName, StringComparison.OrdinalIgnoreCase)) checksumUrl = url;
         }
-
         if (string.IsNullOrWhiteSpace(setupUrl))
             throw new InvalidOperationException($"Im GitHub-Release fehlt '{SetupAssetName}'.");
-
         var releaseName = root.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
         return new UpdateInfo(releaseVersion, tag, setupUrl, checksumUrl, releaseName);
     }
 
     public async Task<string> DownloadAndVerifyAsync(UpdateInfo update, IProgress<int>? progress = null, CancellationToken cancellationToken = default)
     {
-        var updateDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "KassenSync",
-            "Updates");
+        var updateDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OrdnerSync", "Updates");
         Directory.CreateDirectory(updateDirectory);
-
-        var setupPath = Path.Combine(updateDirectory, $"KassenSync-Setup-{update.Version}.exe");
+        var setupPath = Path.Combine(updateDirectory, $"OrdnerSync-Setup-{update.Version}.exe");
         var tempPath = setupPath + ".download";
         if (File.Exists(tempPath)) File.Delete(tempPath);
 
@@ -83,8 +72,7 @@ public sealed class GitHubUpdateService
                 if (read == 0) break;
                 await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
                 copied += read;
-                if (total is > 0)
-                    progress?.Report((int)Math.Clamp(copied * 100L / total.Value, 0, 100));
+                if (total is > 0) progress?.Report((int)Math.Clamp(copied * 100L / total.Value, 0, 100));
             }
             await output.FlushAsync(cancellationToken);
         }
@@ -93,9 +81,7 @@ public sealed class GitHubUpdateService
         {
             var checksumText = await _httpClient.GetStringAsync(update.ChecksumDownloadUrl, cancellationToken);
             var expected = checksumText.Trim().Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(expected))
-                throw new InvalidOperationException("Die SHA-256-Prüfsumme des Updates ist leer.");
-
+            if (string.IsNullOrWhiteSpace(expected)) throw new InvalidOperationException("Die SHA-256-Prüfsumme des Updates ist leer.");
             await using var hashStream = File.OpenRead(tempPath);
             var actual = Convert.ToHexString(await SHA256.HashDataAsync(hashStream, cancellationToken));
             if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
