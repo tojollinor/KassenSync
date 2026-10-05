@@ -124,6 +124,33 @@ public sealed class JobRuntimeStateStore
         }
     }
 
+    public void Remove(string jobId)
+    {
+        lock (_gate)
+        {
+            EnsureLoaded();
+            if (_states.Remove(jobId))
+                Persist();
+        }
+    }
+
+    public void RemoveOrphans(IEnumerable<string> validJobIds)
+    {
+        lock (_gate)
+        {
+            EnsureLoaded();
+            var valid = validJobIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var removed = _states.Keys.Where(x => !valid.Contains(x)).ToArray();
+            if (removed.Length == 0)
+                return;
+
+            foreach (var jobId in removed)
+                _states.Remove(jobId);
+
+            Persist();
+        }
+    }
+
     private JobRuntimeState GetOrCreate(string jobId)
     {
         if (_states.TryGetValue(jobId, out var state))
