@@ -15,5 +15,9 @@
     <ProjectReference Include="..\KassenSync.Core\KassenSync.Core.csproj" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
     <Resource Include="Assets\OrdnerSync.ico" />
+    <Resource Include="Assets\OrdnerSync.png" />
   </ItemGroup>
+  <Target Name="PrepareOrdnerSyncLogo" BeforeTargets="PrepareResources">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\tools\Generate-OrdnerSyncIcon.ps1&quot;" />
+  </Target>
 </Project>
