@@ -4,7 +4,7 @@ KassenSync ist eine Windows-Anwendung aus **WPF-GUI + Windows-Dienst**. Der Dien
 
 Bereits erfolgreich ausgegebene Dateien werden nicht automatisch erneut kopiert, auch wenn sie später vom Zielmedium gelöscht werden. Über die GUI können einzelne oder mehrere markierte Dateien bewusst erneut ausgegeben werden.
 
-## Aktueller Entwicklungsstand
+## Funktionen
 
 - Windows-Dienst und WPF-GUI
 - SQLite-Index unter `%ProgramData%\\KassenSync`
@@ -20,22 +20,28 @@ Bereits erfolgreich ausgegebene Dateien werden nicht automatisch erneut kopiert,
 - sicheres Kopieren über temporäre `.part`-Datei
 - WPF-Dateiübersicht mit Mehrfachauswahl, Status, Zeitstempeln und Ausgabezähler
 - manuelle Wiederausgabe markierter Dateien
-- Einstellungsseite für Quelle, Unterordner, Ziel, Dateitypen und Updateprüfung
-- konfigurierbarer GUI-Autostart per aktuellem Windows-Benutzer
-- Named-Pipe-Kommunikation zwischen GUI und Dienst
+- konfigurierbarer GUI-Autostart
 - Topmost-WPF-Kopierfenster mit Live-Fortschritt
 - drei Sekunden sichtbare Erfolg-/Fehlermeldung nach einem Kopiervorgang
-- fehlendes Zielmedium erzeugt keine Popup-Schleife, sondern bleibt im Wartestatus
+- automatische oder manuelle Updateprüfung über GitHub Releases
+- direkter Download von `KassenSync-Setup.exe` aus GitHub Releases
+- SHA-256-Prüfung des heruntergeladenen Installers
+- UAC-gestütztes Update mit sichtbarem Installationsfortschritt
+- automatischer Neustart der App mit Update-Erfolgsmeldung
 
-## Noch geplant
+## Installer und Releases
 
-- Auto-Update direkt über GitHub Releases
-- Installer und GitHub-Actions-Releasepipeline
+Der Installer wird mit Inno Setup gebaut. Die GitHub-Actions-Releasepipeline veröffentlicht:
+
+- `KassenSync-Setup.exe`
+- `KassenSync-Setup.exe.sha256`
+
+Ein Release kann durch einen Tag wie `v0.1.0` oder manuell über den Release-Workflow erzeugt werden.
 
 ## Architektur
 
 - `KassenSync.Core`: Modelle, Datenbank, Einstellungen, Hashing und Kopierfunktionen
 - `KassenSync.Service`: Windows-Dienst, Watcher, Indexierung, Kopierwarteschlange und IPC-Server
-- `KassenSync.App`: WPF-GUI und IPC-Client
+- `KassenSync.App`: WPF-GUI, IPC-Client und GitHub-Updater
 
-Der Windows-Dienst zeigt selbst keine Fenster. Die GUI liest den Kopierfortschritt aus einem atomar aktualisierten Status unter `%ProgramData%\\KassenSync` und zeigt ihn als Topmost-WPF-Fenster an.
+Der Windows-Dienst zeigt selbst keine Fenster. Benutzerinteraktion findet ausschließlich in der WPF-GUI statt.

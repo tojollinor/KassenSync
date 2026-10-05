@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,18 +16,22 @@ public partial class MainWindow : Window
 {
     private readonly IpcClient _client = new();
     private readonly CopyStateReader _copyStateReader = new();
+    private readonly GitHubUpdateService _updateService = new();
     private readonly ObservableCollection<IndexedFileRow> _rows = new();
     private readonly DispatcherTimer _refreshTimer;
     private readonly DispatcherTimer _copyStateTimer;
     private AppSettings? _settings;
     private bool _refreshing;
     private bool _copyPolling;
+    private bool _updateCheckRunning;
     private CopyProgressWindow? _copyProgressWindow;
     private string? _lastCompletedOperationId;
+    private readonly bool _updatedOnLaunch;
 
     public MainWindow()
     {
         InitializeComponent();
+        VersionText.Text = $"KassenSync {AppVersion.Display}";
         FilesGrid.ItemsSource = _rows;
 
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
@@ -34,6 +39,9 @@ public partial class MainWindow : Window
 
         _copyStateTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         _copyStateTimer.Tick += async (_, _) => await PollCopyStateAsync();
+
+        var args = Environment.GetCommandLineArgs();
+        _updatedOnLaunch = args.Any(x => string.Equals(x, "--updated", StringComparison.OrdinalIgnoreCase));
 
         Loaded += MainWindow_Loaded;
         Closed += (_, _) =>
@@ -43,17 +51,29 @@ public partial class MainWindow : Window
             if (_copyProgressWindow?.IsVisible == true) _copyProgressWindow.Close();
         };
 
-        if (Environment.GetCommandLineArgs().Any(x => string.Equals(x, "--autostart", StringComparison.OrdinalIgnoreCase)))
+        if (args.Any(x => string.Equals(x, "--autostart", StringComparison.OrdinalIgnoreCase)))
             WindowState = WindowState.Minimized;
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         PopulateDrives();
+        if (_updatedOnLaunch) await Task.Delay(800);
+
         await RefreshAllAsync(silent: false);
         await PollCopyStateAsync();
         _refreshTimer.Start();
         _copyStateTimer.Start();
+
+        if (_updatedOnLaunch)
+        {
+            var completeWindow = new UpdateCompleteWindow();
+            await completeWindow.ShowForAsync(TimeSpan.FromSeconds(3));
+        }
+        else if (_settings?.CheckForUpdatesOnStart == true)
+        {
+            await CheckForUpdatesAsync(manual: false);
+        }
     }
 
     private async Task PollCopyStateAsync()
@@ -63,7 +83,6 @@ public partial class MainWindow : Window
         try
         {
             var state = await _copyStateReader.ReadAsync();
-
             if (state.IsActive)
             {
                 if (_copyProgressWindow is null || !_copyProgressWindow.IsLoaded)
@@ -83,8 +102,7 @@ public partial class MainWindow : Window
                 return;
 
             _lastCompletedOperationId = state.OperationId;
-            if (DateTime.UtcNow - state.UpdatedAtUtc > TimeSpan.FromSeconds(10))
-                return;
+            if (DateTime.UtcNow - state.UpdatedAtUtc > TimeSpan.FromSeconds(10)) return;
 
             var resultWindow = new CopyResultWindow(state);
             await resultWindow.ShowForAsync(TimeSpan.FromSeconds(3));
@@ -92,7 +110,6 @@ public partial class MainWindow : Window
         }
         catch
         {
-            // Fortschrittsanzeige darf die Haupt-GUI niemals beeinträchtigen.
         }
         finally
         {
@@ -136,6 +153,66 @@ public partial class MainWindow : Window
         finally
         {
             _refreshing = false;
+        }
+    }
+
+    private async Task CheckForUpdatesAsync(bool manual)
+    {
+        if (_updateCheckRunning) return;
+        _updateCheckRunning = true;
+        CheckUpdatesButton.IsEnabled = false;
+        UpdateProgressWindow? progressWindow = null;
+        try
+        {
+            FooterStatusText.Text = "Prüfe auf Updates …";
+            var update = await _updateService.CheckForUpdateAsync();
+            if (update is null)
+            {
+                FooterStatusText.Text = "KassenSync ist aktuell.";
+                if (manual)
+                    MessageBox.Show(this, $"KassenSync {AppVersion.Display} ist bereits aktuell.", "KassenSync Update", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var answer = MessageBox.Show(this,
+                $"KassenSync {update.Version} ist verfügbar.\n\nJetzt herunterladen und installieren?",
+                "KassenSync Update",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+            if (answer != MessageBoxResult.Yes)
+            {
+                FooterStatusText.Text = $"Update {update.Version} verfügbar.";
+                return;
+            }
+
+            progressWindow = new UpdateProgressWindow { Owner = this };
+            progressWindow.Show();
+            var progress = new Progress<int>(p => progressWindow.SetDownloadProgress(p));
+            var setupPath = await _updateService.DownloadAndVerifyAsync(update, progress);
+            progressWindow.SetInstalling();
+            await Task.Delay(300);
+            _updateService.LaunchInstaller(setupPath);
+            progressWindow.Close();
+            Application.Current.Shutdown();
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            progressWindow?.Close();
+            FooterStatusText.Text = "Update abgebrochen.";
+            if (manual)
+                MessageBox.Show(this, "Die Administratorabfrage wurde abgebrochen.", "KassenSync Update", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            progressWindow?.Close();
+            FooterStatusText.Text = "Updateprüfung fehlgeschlagen.";
+            if (manual)
+                MessageBox.Show(this, ex.Message, "KassenSync Update", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            _updateCheckRunning = false;
+            CheckUpdatesButton.IsEnabled = true;
         }
     }
 
@@ -235,4 +312,7 @@ public partial class MainWindow : Window
             SaveSettingsButton.IsEnabled = true;
         }
     }
+
+    private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
+        => await CheckForUpdatesAsync(manual: true);
 }

@@ -112,7 +112,10 @@
                         <StackPanel Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2">
                             <CheckBox x:Name="AutostartCheckBox" Content="KassenSync-GUI bei Windows-Anmeldung starten" Margin="0,0,0,8"/>
                             <CheckBox x:Name="UpdateCheckBox" Content="Beim Start nach Updates suchen" Margin="0,0,0,16"/>
-                            <Button x:Name="SaveSettingsButton" Content="Einstellungen speichern" Padding="16,8" HorizontalAlignment="Left" Click="SaveSettingsButton_Click"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="SaveSettingsButton" Content="Einstellungen speichern" Padding="16,8" Margin="0,0,8,0" Click="SaveSettingsButton_Click"/>
+                                <Button x:Name="CheckUpdatesButton" Content="Nach Updates suchen" Padding="16,8" Click="CheckUpdatesButton_Click"/>
+                            </StackPanel>
                         </StackPanel>
                     </Grid>
                 </ScrollViewer>
@@ -125,7 +128,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="FooterStatusText" Text="Bereit" Foreground="Gray"/>
-            <TextBlock Grid.Column="1" Text="KassenSync 0.1.0" Foreground="Gray"/>
+            <TextBlock Grid.Column="1" x:Name="VersionText" Text="KassenSync" Foreground="Gray"/>
         </Grid>
     </Grid>
 </Window>

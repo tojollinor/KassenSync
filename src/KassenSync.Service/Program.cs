@@ -1,6 +1,24 @@
 using KassenSync.Core.Services;
 using KassenSync.Service;
 
+if (args.Any(x => string.Equals(x, "--install-service", StringComparison.OrdinalIgnoreCase)))
+{
+    Environment.ExitCode = ServiceInstaller.Install();
+    return;
+}
+
+if (args.Any(x => string.Equals(x, "--uninstall-service", StringComparison.OrdinalIgnoreCase)))
+{
+    Environment.ExitCode = ServiceInstaller.Uninstall();
+    return;
+}
+
+if (args.Any(x => string.Equals(x, "--stop-service", StringComparison.OrdinalIgnoreCase)))
+{
+    Environment.ExitCode = ServiceInstaller.Stop();
+    return;
+}
+
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddWindowsService(options => options.ServiceName = "KassenSync Service");
 builder.Services.AddSingleton<SettingsStore>();
