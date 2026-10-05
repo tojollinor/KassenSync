@@ -23,6 +23,10 @@ public sealed class CopyQueueHostedService(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await database.InitializeAsync(stoppingToken);
+        var startupSettings = await settingsStore.LoadAsync(stoppingToken);
+        var validJobIds = startupSettings.Jobs.Select(x => x.Id).ToArray();
+        await database.CleanupOrphanedJobDataAsync(validJobIds, stoppingToken);
+        runtimeStateStore.RemoveOrphans(validJobIds);
 
         while (!stoppingToken.IsCancellationRequested)
         {
