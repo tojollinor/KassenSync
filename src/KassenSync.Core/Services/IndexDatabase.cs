@@ -212,6 +212,79 @@ public sealed class IndexDatabase
         return deleted;
     }
 
+    public async Task<int> DeleteJobDataAsync(
+        string jobId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(jobId))
+            return 0;
+
+        await using var connection = new SqliteConnection(ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        await using (var baselines = connection.CreateCommand())
+        {
+            baselines.Transaction = (SqliteTransaction)transaction;
+            baselines.CommandText = "DELETE FROM sync_baselines WHERE job_id = $job;";
+            baselines.Parameters.AddWithValue("$job", jobId);
+            await baselines.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        int deleted;
+        await using (var files = connection.CreateCommand())
+        {
+            files.Transaction = (SqliteTransaction)transaction;
+            files.CommandText = "DELETE FROM indexed_files WHERE job_id = $job;";
+            files.Parameters.AddWithValue("$job", jobId);
+            deleted = await files.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return deleted;
+    }
+
+    public async Task<int> CleanupOrphanedJobDataAsync(
+        IEnumerable<string> validJobIds,
+        CancellationToken cancellationToken = default)
+    {
+        var valid = validJobIds
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        await using var connection = new SqliteConnection(ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        var placeholders = new List<string>();
+        await using var files = connection.CreateCommand();
+        files.Transaction = (SqliteTransaction)transaction;
+        for (var i = 0; i < valid.Length; i++)
+        {
+            var name = $"$job{i}";
+            placeholders.Add(name);
+            files.Parameters.AddWithValue(name, valid[i]);
+        }
+
+        var predicate = valid.Length == 0
+            ? "1 = 1"
+            : $"job_id NOT IN ({string.Join(",", placeholders)})";
+
+        files.CommandText = $"DELETE FROM indexed_files WHERE {predicate};";
+        var deleted = await files.ExecuteNonQueryAsync(cancellationToken);
+
+        await using var baselines = connection.CreateCommand();
+        baselines.Transaction = (SqliteTransaction)transaction;
+        for (var i = 0; i < valid.Length; i++)
+            baselines.Parameters.AddWithValue($"$job{i}", valid[i]);
+        baselines.CommandText = $"DELETE FROM sync_baselines WHERE {predicate};";
+        await baselines.ExecuteNonQueryAsync(cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+        return deleted;
+    }
+
     public async Task SetStatusAsync(
         long id,
         FileTransferStatus status,
