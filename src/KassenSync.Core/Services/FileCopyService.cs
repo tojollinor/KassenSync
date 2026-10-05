@@ -2,30 +2,38 @@ using KassenSync.Core.Models;
 
 namespace KassenSync.Core.Services;
 
-public sealed class FileCopyService(TargetPathService targetPathService)
+public sealed class FileCopyService(
+    TargetPathService targetPathService,
+    FileHashService hashService)
 {
     private const int BufferSize = 1024 * 1024;
 
     public async Task<string> CopyAsync(
         IndexedFile file,
-        AppSettings settings,
+        SyncJob job,
         int currentFile,
         int totalFiles,
         IProgress<CopyProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         if (!File.Exists(file.FullSourcePath))
-            throw new FileNotFoundException("Die Quelldatei ist nicht mehr vorhanden.", file.FullSourcePath);
+            throw new FileNotFoundException(
+                "Die Quelldatei ist nicht mehr vorhanden.",
+                file.FullSourcePath);
 
-        if (!targetPathService.IsTargetAvailable(settings))
-            throw new TargetUnavailableException(settings.TargetDrive);
+        if (!targetPathService.IsTargetAvailable(job, file.SourceSide))
+            throw new TargetUnavailableException(
+                targetPathService.GetTargetRoot(job, file.SourceSide));
 
-        var destinationPath = targetPathService.GetDestinationPath(file, settings);
+        var destinationPath = targetPathService.GetDestinationPath(file, job);
         var destinationDirectory = Path.GetDirectoryName(destinationPath)
-                                   ?? throw new InvalidOperationException("Zielverzeichnis konnte nicht bestimmt werden.");
+                                   ?? throw new InvalidOperationException(
+                                       "Zielverzeichnis konnte nicht bestimmt werden.");
+
         Directory.CreateDirectory(destinationDirectory);
 
-        var tempPath = destinationPath + $".kassensync-{Guid.NewGuid():N}.part";
+        var tempPath =
+            destinationPath + $".ordnersync-{Guid.NewGuid():N}.part";
         long copied = 0;
 
         try
@@ -36,26 +44,42 @@ public sealed class FileCopyService(TargetPathService targetPathService)
                              FileAccess.Read,
                              FileShare.Read,
                              BufferSize,
-                             FileOptions.Asynchronous | FileOptions.SequentialScan))
+                             FileOptions.Asynchronous |
+                             FileOptions.SequentialScan))
             await using (var target = new FileStream(
                              tempPath,
                              FileMode.CreateNew,
                              FileAccess.Write,
                              FileShare.None,
                              BufferSize,
-                             FileOptions.Asynchronous | FileOptions.SequentialScan | FileOptions.WriteThrough))
+                             FileOptions.Asynchronous |
+                             FileOptions.SequentialScan |
+                             FileOptions.WriteThrough))
             {
                 var totalBytes = source.Length;
                 var buffer = new byte[BufferSize];
+
                 while (true)
                 {
-                    var read = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
+                    var read = await source.ReadAsync(
+                        buffer.AsMemory(0, buffer.Length),
+                        cancellationToken);
+
                     if (read == 0)
                         break;
 
-                    await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                    await target.WriteAsync(
+                        buffer.AsMemory(0, read),
+                        cancellationToken);
+
                     copied += read;
-                    var percent = totalBytes <= 0 ? 100 : (int)Math.Clamp(copied * 100L / totalBytes, 0, 100);
+                    var percent = totalBytes <= 0
+                        ? 100
+                        : (int)Math.Clamp(
+                            copied * 100L / totalBytes,
+                            0,
+                            100);
+
                     progress?.Report(new CopyProgress(
                         file.Id,
                         file.FileName,
@@ -70,11 +94,30 @@ public sealed class FileCopyService(TargetPathService targetPathService)
                 await target.FlushAsync(cancellationToken);
             }
 
-            if (!targetPathService.IsTargetAvailable(settings))
-                throw new TargetUnavailableException(settings.TargetDrive);
+            if (!targetPathService.IsTargetAvailable(job, file.SourceSide))
+                throw new TargetUnavailableException(
+                    targetPathService.GetTargetRoot(job, file.SourceSide));
+
+            var tempInfo = new FileInfo(tempPath);
+            if (tempInfo.Length != file.SizeBytes)
+                throw new InvalidDataException(
+                    "Die kopierte Dateigröße stimmt nicht mit dem Index überein.");
+
+            var copiedHash = await hashService.ComputeSha256Async(
+                tempPath,
+                cancellationToken);
+
+            if (!string.Equals(
+                    copiedHash,
+                    file.Sha256,
+                    StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException(
+                    "Die SHA-256-Prüfung der kopierten Datei ist fehlgeschlagen.");
 
             File.Move(tempPath, destinationPath, true);
-            File.SetLastWriteTimeUtc(destinationPath, File.GetLastWriteTimeUtc(file.FullSourcePath));
+            File.SetLastWriteTimeUtc(
+                destinationPath,
+                File.GetLastWriteTimeUtc(file.FullSourcePath));
 
             progress?.Report(new CopyProgress(
                 file.Id,
@@ -95,6 +138,29 @@ public sealed class FileCopyService(TargetPathService targetPathService)
         }
     }
 
+    public async Task<string> CopyAsync(
+        IndexedFile file,
+        AppSettings settings,
+        int currentFile,
+        int totalFiles,
+        IProgress<CopyProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        SettingsMigration.Normalize(settings);
+
+        var job = settings.Jobs.FirstOrDefault(x =>
+                      string.Equals(x.Id, file.JobId, StringComparison.OrdinalIgnoreCase))
+                  ?? settings.Jobs.First();
+
+        return await CopyAsync(
+            file,
+            job,
+            currentFile,
+            totalFiles,
+            progress,
+            cancellationToken);
+    }
+
     private static void TryDelete(string path)
     {
         try
@@ -109,7 +175,7 @@ public sealed class FileCopyService(TargetPathService targetPathService)
 }
 
 public sealed class TargetUnavailableException(string target)
-    : IOException($"Das Zielmedium '{target}' ist nicht verfügbar.")
+    : IOException($"Der Zielordner '{target}' ist nicht verfügbar.")
 {
     public string Target { get; } = target;
 }

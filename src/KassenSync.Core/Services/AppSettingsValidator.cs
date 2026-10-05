@@ -34,6 +34,10 @@ public static class AppSettingsValidator
             if (string.Equals(source, target, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"Beim Job '{job.Name}' dürfen Quelle und Ziel nicht identisch sein.");
 
+            if (IsNestedPath(source, target) || IsNestedPath(target, source))
+                throw new InvalidOperationException(
+                    $"Beim Job '{job.Name}' dürfen Quelle und Ziel nicht ineinander liegen.");
+
             job.Name = job.Name.Trim();
             job.SourceFolder = source;
             job.TargetFolder = target;
@@ -42,5 +46,20 @@ public static class AppSettingsValidator
         }
 
         SettingsMigration.Normalize(settings);
+    }
+
+    private static bool IsNestedPath(string parent, string candidate)
+    {
+        var normalizedParent = parent.TrimEnd(
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+
+        var normalizedCandidate = candidate.TrimEnd(
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+
+        return normalizedCandidate.StartsWith(
+            normalizedParent,
+            StringComparison.OrdinalIgnoreCase);
     }
 }
