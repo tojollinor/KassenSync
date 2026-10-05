@@ -44,22 +44,30 @@
 
                     <DataGrid Grid.Row="1" x:Name="FilesGrid"
                               AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              SelectionMode="Extended"
+                              IsReadOnly="False"
+                              SelectionMode="Single"
                               SelectionUnit="FullRow"
                               CanUserAddRows="False"
                               CanUserDeleteRows="False"
-                              GridLinesVisibility="Horizontal"
-                              SelectionChanged="FilesGrid_SelectionChanged">
+                              GridLinesVisibility="Horizontal">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Dateiname" Binding="{Binding FileName}" Width="2*"/>
-                            <DataGridTextColumn Header="Relativer Pfad" Binding="{Binding RelativePath}" Width="2.4*"/>
-                            <DataGridTextColumn Header="Größe" Binding="{Binding Size}" Width="100"/>
-                            <DataGridTextColumn Header="Erkannt" Binding="{Binding DetectedAt}" Width="145"/>
-                            <DataGridTextColumn Header="Zuletzt kopiert" Binding="{Binding LastCopiedAt}" Width="145"/>
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="150"/>
-                            <DataGridTextColumn Header="Ausgaben" Binding="{Binding CopyCount}" Width="85"/>
-                            <DataGridTextColumn Header="Fehler" Binding="{Binding Error}" Width="2*"/>
+                            <DataGridTemplateColumn Header="✓" Width="44">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Dateiname" Binding="{Binding FileName}" Width="2*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Relativer Pfad" Binding="{Binding RelativePath}" Width="2.4*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Größe" Binding="{Binding Size}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Erkannt" Binding="{Binding DetectedAt}" Width="145" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Zuletzt kopiert" Binding="{Binding LastCopiedAt}" Width="145" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="150" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Ausgaben" Binding="{Binding CopyCount}" Width="85" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Fehler" Binding="{Binding Error}" Width="2*" IsReadOnly="True"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

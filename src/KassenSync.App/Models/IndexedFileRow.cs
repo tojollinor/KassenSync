@@ -1,10 +1,26 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using KassenSync.Core.Models;
 
 namespace KassenSync.App.Models;
 
-public sealed class IndexedFileRow
+public sealed class IndexedFileRow : INotifyPropertyChanged
 {
+    private bool _isSelected;
+
     public required IndexedFile Source { get; init; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected == value) return;
+            _isSelected = value;
+            OnPropertyChanged();
+        }
+    }
+
     public long Id => Source.Id;
     public string FileName => Source.FileName;
     public string RelativePath => Source.RelativePath;
@@ -23,6 +39,11 @@ public sealed class IndexedFileRow
         _ => Source.Status.ToString()
     };
     public string Error => Source.LastError ?? string.Empty;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     private static string FormatBytes(long bytes)
     {

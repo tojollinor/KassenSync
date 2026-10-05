@@ -128,10 +128,23 @@ public partial class MainWindow : Window
             ServiceStatusText.Foreground = System.Windows.Media.Brushes.ForestGreen;
 
             var files = await _client.SendAsync<List<IndexedFile>>(IpcMessageTypes.GetFiles);
-            var selectedIds = FilesGrid.SelectedItems.Cast<IndexedFileRow>().Select(x => x.Id).ToHashSet();
+            var selectedIds = _rows.Where(x => x.IsSelected).Select(x => x.Id).ToHashSet();
             _rows.Clear();
-            foreach (var file in files) _rows.Add(new IndexedFileRow { Source = file });
-            foreach (var row in _rows.Where(x => selectedIds.Contains(x.Id))) FilesGrid.SelectedItems.Add(row);
+            foreach (var file in files)
+            {
+                var row = new IndexedFileRow
+                {
+                    Source = file,
+                    IsSelected = selectedIds.Contains(file.Id)
+                };
+                row.PropertyChanged += (_, args) =>
+                {
+                    if (args.PropertyName == nameof(IndexedFileRow.IsSelected))
+                        UpdateSelectionText();
+                };
+                _rows.Add(row);
+            }
+            UpdateSelectionText();
 
             if (_settings is null)
             {
@@ -262,7 +275,7 @@ public partial class MainWindow : Window
 
     private async void RecopyButton_Click(object sender, RoutedEventArgs e)
     {
-        var selected = FilesGrid.SelectedItems.Cast<IndexedFileRow>().Select(x => x.Id).Distinct().ToArray();
+        var selected = _rows.Where(x => x.IsSelected).Select(x => x.Id).Distinct().ToArray();
         if (selected.Length == 0)
         {
             MessageBox.Show(this, "Bitte mindestens eine Datei markieren.", "KassenSync", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -281,8 +294,15 @@ public partial class MainWindow : Window
         }
     }
 
-    private void SelectAllButton_Click(object sender, RoutedEventArgs e) => FilesGrid.SelectAll();
-    private void FilesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e) => SelectionText.Text = $"{FilesGrid.SelectedItems.Count} Datei(en) markiert";
+    private void SelectAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (var row in _rows)
+            row.IsSelected = true;
+        UpdateSelectionText();
+    }
+
+    private void UpdateSelectionText()
+        => SelectionText.Text = $"{_rows.Count(x => x.IsSelected)} Datei(en) markiert";
 
     private void BrowseSourceButton_Click(object sender, RoutedEventArgs e)
     {
