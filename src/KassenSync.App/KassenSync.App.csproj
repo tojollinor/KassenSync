@@ -6,8 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AssemblyName>OrdnerSync.App</AssemblyName>
+    <Product>OrdnerSync</Product>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\\KassenSync.Core\\KassenSync.Core.csproj" />
+    <ProjectReference Include="..\KassenSync.Core\KassenSync.Core.csproj" />
   </ItemGroup>
 </Project>

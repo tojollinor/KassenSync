@@ -2,7 +2,7 @@ namespace KassenSync.Core.Models;
 
 public sealed class AppSettings
 {
-    public string SourceFolder { get; set; } = @"C:\KassenSync\Input";
+    public string SourceFolder { get; set; } = @"C:\OrdnerSync\Input";
     public bool IncludeSubdirectories { get; set; } = true;
     public string TargetDrive { get; set; } = @"E:\";
     public string TargetSubfolder { get; set; } = "Export";
