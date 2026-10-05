@@ -1,6 +1,6 @@
 #define MyAppName "OrdnerSync"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.3.11"
+  #define MyAppVersion "0.3.12"
 #endif
 #define MyAppPublisher "OrdnerSync"
 #define MyAppExeName "OrdnerSync.App.exe"
@@ -42,8 +42,8 @@ Source: "..\artifacts\publish\service\*"; DestDir: "{app}\Service"; Flags: ignor
 Type: filesandordirs; Name: "{autopf}\KassenSync"
 
 [Icons]
-Name: "{autoprograms}\OrdnerSync"; Filename: "{app}\App\{#MyAppExeName}"
-Name: "{autodesktop}\OrdnerSync"; Filename: "{app}\App\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autoprograms}\OrdnerSync"; Filename: "{app}\App\{#MyAppExeName}"; IconFilename: "{app}\App\{#MyAppExeName}"
+Name: "{autodesktop}\OrdnerSync"; Filename: "{app}\App\{#MyAppExeName}"; IconFilename: "{app}\App\{#MyAppExeName}"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Desktop-Verknüpfung erstellen"; GroupDescription: "Zusätzliche Symbole:"; Flags: unchecked
