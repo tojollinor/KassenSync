@@ -936,7 +936,6 @@ public partial class MainWindow : Window
         if (answer != MessageBoxResult.Yes)
             return;
 
-        DeleteJobButton.IsEnabled = false;
         try
         {
             await _client.SendAsync<object>(
@@ -961,7 +960,6 @@ public partial class MainWindow : Window
         }
         finally
         {
-            DeleteJobButton.IsEnabled = true;
         }
     }
 
