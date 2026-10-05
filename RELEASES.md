@@ -1,5 +1,14 @@
 # Releases
 
+## 0.3.6
+
+- ursprüngliches OrdnerSync-Logo wieder als verbindliche Mastergrafik verwendet
+- CI überschreibt das vorhandene OrdnerSync.ico nicht mehr mit einer vereinfachten Nachzeichnung
+- Hauptfenster und Fenstersymbol verwenden wieder direkt das originale ICO
+- Über-Seite verwendet eine aus dem originalen ICO abgeleitete hochauflösende PNG-Darstellung
+- Desktop-, Taskleisten-, Tray-, Fenster- und Installer-Symbole basieren wieder auf demselben ursprünglichen Logo
+
+
 ## 0.3.5
 
 - Windows-Icon mit zusätzlicher Sicherheitszone erzeugt, damit das Motiv in kleinen Iconstufen vollständig sichtbar bleibt
