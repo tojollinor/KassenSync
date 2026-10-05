@@ -1,5 +1,14 @@
 # Releases
 
+## 0.3.8
+
+- Über-Seite verwendet das gelieferte vollständige OrdnerSync-Rasterlogo inklusive Schriftzug direkt als Asset
+- keine Vektor-Nachzeichnung und keine ICO-zu-PNG-Konvertierung mehr für die große Logo-Darstellung
+- Windows-Icon wird aus dem bestätigten Logo-Motiv mit transparentem Außenbereich und vollständig deckendem eigentlichen Symbol erzeugt
+- Desktop-, Fenster-, Taskleisten-, Tray- und Installer-Icon verwenden dasselbe deckende Symbol
+- bidirektionaler Sync ist in Oberfläche und Jobliste als Beta gekennzeichnet
+
+
 ## 0.3.7
 
 - GUI-Logo vollständig als native WPF-Vektorgrafik neu aufgebaut
