@@ -27,6 +27,12 @@ internal static class ServiceInstaller
         return 0;
     }
 
+    public static int Start()
+    {
+        RunScIgnoreErrors("start", ServiceName);
+        return 0;
+    }
+
     public static int Stop()
     {
         RunScIgnoreErrors("stop", ServiceName);

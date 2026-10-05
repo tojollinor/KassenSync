@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Threading;
 using KassenSync.App.Models;
 using KassenSync.App.Services;
@@ -17,6 +17,7 @@ public partial class MainWindow : Window
     private readonly IpcClient _client = new();
     private readonly CopyStateReader _copyStateReader = new();
     private readonly GitHubUpdateService _updateService = new();
+    private readonly WindowsServiceManager _serviceManager = new();
     private readonly ObservableCollection<IndexedFileRow> _rows = new();
     private readonly DispatcherTimer _refreshTimer;
     private readonly DispatcherTimer _copyStateTimer;
@@ -31,7 +32,8 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        VersionText.Text = $"KassenSync {AppVersion.Display}";
+        VersionText.Text = $"OrdnerSync {AppVersion.Display}";
+        AboutVersionText.Text = $"Version {AppVersion.Display}";
         FilesGrid.ItemsSource = _rows;
 
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
@@ -58,6 +60,8 @@ public partial class MainWindow : Window
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         PopulateDrives();
+        RefreshServiceStatus();
+
         if (_updatedOnLaunch) await Task.Delay(800);
 
         await RefreshAllAsync(silent: false);
@@ -130,6 +134,7 @@ public partial class MainWindow : Window
             var files = await _client.SendAsync<List<IndexedFile>>(IpcMessageTypes.GetFiles);
             var selectedIds = _rows.Where(x => x.IsSelected).Select(x => x.Id).ToHashSet();
             _rows.Clear();
+
             foreach (var file in files)
             {
                 var row = new IndexedFileRow
@@ -144,6 +149,7 @@ public partial class MainWindow : Window
                 };
                 _rows.Add(row);
             }
+
             UpdateSelectionText();
 
             if (_settings is null)
@@ -161,11 +167,12 @@ public partial class MainWindow : Window
             ServiceStatusText.Foreground = System.Windows.Media.Brushes.Firebrick;
             FooterStatusText.Text = ex.Message;
             if (!silent)
-                MessageBox.Show(this, ex.Message, "KassenSync", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, ex.Message, "OrdnerSync", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {
             _refreshing = false;
+            RefreshServiceStatus();
         }
     }
 
@@ -175,23 +182,25 @@ public partial class MainWindow : Window
         _updateCheckRunning = true;
         CheckUpdatesButton.IsEnabled = false;
         UpdateProgressWindow? progressWindow = null;
+
         try
         {
             FooterStatusText.Text = "Prüfe auf Updates …";
             var update = await _updateService.CheckForUpdateAsync();
             if (update is null)
             {
-                FooterStatusText.Text = "KassenSync ist aktuell.";
+                FooterStatusText.Text = "OrdnerSync ist aktuell.";
                 if (manual)
-                    MessageBox.Show(this, $"KassenSync {AppVersion.Display} ist bereits aktuell.", "KassenSync Update", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(this, $"OrdnerSync {AppVersion.Display} ist bereits aktuell.", "OrdnerSync Update", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             var answer = MessageBox.Show(this,
-                $"KassenSync {update.Version} ist verfügbar.\n\nJetzt herunterladen und installieren?",
-                "KassenSync Update",
+                $"OrdnerSync {update.Version} ist verfügbar.\n\nJetzt herunterladen und installieren?",
+                "OrdnerSync Update",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Information);
+
             if (answer != MessageBoxResult.Yes)
             {
                 FooterStatusText.Text = $"Update {update.Version} verfügbar.";
@@ -213,14 +222,14 @@ public partial class MainWindow : Window
             progressWindow?.Close();
             FooterStatusText.Text = "Update abgebrochen.";
             if (manual)
-                MessageBox.Show(this, "Die Administratorabfrage wurde abgebrochen.", "KassenSync Update", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, "Die Administratorabfrage wurde abgebrochen.", "OrdnerSync Update", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
             progressWindow?.Close();
             FooterStatusText.Text = "Updateprüfung fehlgeschlagen.";
             if (manual)
-                MessageBox.Show(this, ex.Message, "KassenSync Update", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, ex.Message, "OrdnerSync Update", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -257,14 +266,18 @@ public partial class MainWindow : Window
     {
         var current = TargetDriveComboBox.Text;
         TargetDriveComboBox.Items.Clear();
-        foreach (var drive in DriveInfo.GetDrives().OrderBy(x => x.Name)) TargetDriveComboBox.Items.Add(drive.Name);
-        if (!string.IsNullOrWhiteSpace(current)) TargetDriveComboBox.Text = current;
+        foreach (var drive in DriveInfo.GetDrives().OrderBy(x => x.Name))
+            TargetDriveComboBox.Items.Add(drive.Name);
+        if (!string.IsNullOrWhiteSpace(current))
+            TargetDriveComboBox.Text = current;
     }
 
     private static string BuildTargetSummary(AppSettings? settings)
     {
         if (settings is null) return "-";
-        return string.IsNullOrWhiteSpace(settings.TargetSubfolder) ? settings.TargetDrive : Path.Combine(settings.TargetDrive, settings.TargetSubfolder);
+        return string.IsNullOrWhiteSpace(settings.TargetSubfolder)
+            ? settings.TargetDrive
+            : Path.Combine(settings.TargetDrive, settings.TargetSubfolder);
     }
 
     private async void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -278,7 +291,7 @@ public partial class MainWindow : Window
         var selected = _rows.Where(x => x.IsSelected).Select(x => x.Id).Distinct().ToArray();
         if (selected.Length == 0)
         {
-            MessageBox.Show(this, "Bitte mindestens eine Datei markieren.", "KassenSync", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, "Bitte mindestens eine Datei markieren.", "OrdnerSync", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -307,8 +320,10 @@ public partial class MainWindow : Window
     private void BrowseSourceButton_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFolderDialog { Title = "Quellordner auswählen" };
-        if (Directory.Exists(SourceFolderTextBox.Text)) dialog.InitialDirectory = SourceFolderTextBox.Text;
-        if (dialog.ShowDialog(this) == true) SourceFolderTextBox.Text = dialog.FolderName;
+        if (Directory.Exists(SourceFolderTextBox.Text))
+            dialog.InitialDirectory = SourceFolderTextBox.Text;
+        if (dialog.ShowDialog(this) == true)
+            SourceFolderTextBox.Text = dialog.FolderName;
     }
 
     private async void SaveSettingsButton_Click(object sender, RoutedEventArgs e)
@@ -335,4 +350,59 @@ public partial class MainWindow : Window
 
     private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
         => await CheckForUpdatesAsync(manual: true);
+
+    private void RefreshServiceButton_Click(object sender, RoutedEventArgs e)
+        => RefreshServiceStatus();
+
+    private async void StartServiceButton_Click(object sender, RoutedEventArgs e)
+        => await RunServiceActionAsync("--start-service");
+
+    private async void StopServiceButton_Click(object sender, RoutedEventArgs e)
+        => await RunServiceActionAsync("--stop-service");
+
+    private async void RestartServiceButton_Click(object sender, RoutedEventArgs e)
+        => await RunServiceActionAsync("--restart-service");
+
+    private void RefreshServiceStatus()
+    {
+        try
+        {
+            var info = _serviceManager.GetInfo();
+            ServiceInstalledText.Text = $"Installiert: {(info.Installed ? "Ja" : "Nein")}";
+            ServiceStateText.Text = $"Status: {info.StatusText}";
+        }
+        catch (Exception ex)
+        {
+            ServiceInstalledText.Text = "Installiert: unbekannt";
+            ServiceStateText.Text = $"Status: {ex.Message}";
+        }
+    }
+
+    private async Task RunServiceActionAsync(string argument)
+    {
+        try
+        {
+            await _serviceManager.RunElevatedActionAsync(argument);
+            await Task.Delay(700);
+            RefreshServiceStatus();
+            await RefreshAllAsync(silent: true);
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            FooterStatusText.Text = "Dienstaktion abgebrochen.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "OrdnerSync Dienst", MessageBoxButton.OK, MessageBoxImage.Error);
+            RefreshServiceStatus();
+        }
+    }
+
+    private void OpenGitHubButton_Click(object sender, RoutedEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo("https://github.com/tojollinor/OrdnerSync")
+        {
+            UseShellExecute = true
+        });
+    }
 }

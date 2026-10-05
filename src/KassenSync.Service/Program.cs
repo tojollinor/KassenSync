@@ -13,6 +13,12 @@ if (args.Any(x => string.Equals(x, "--uninstall-service", StringComparison.Ordin
     return;
 }
 
+if (args.Any(x => string.Equals(x, "--start-service", StringComparison.OrdinalIgnoreCase)))
+{
+    Environment.ExitCode = ServiceInstaller.Start();
+    return;
+}
+
 if (args.Any(x => string.Equals(x, "--stop-service", StringComparison.OrdinalIgnoreCase)))
 {
     Environment.ExitCode = ServiceInstaller.Stop();
