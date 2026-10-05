@@ -112,16 +112,3 @@ jobs:
             'artifacts/installer/OrdnerSync-Setup.exe.sha256' `
             --clobber
 
-  cleanup-kassensync:
-    if: contains(github.event.head_commit.message, '[cleanup-kassensync]')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Remove legacy KassenSync release and assets
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        shell: bash
-        run: |
-          gh release delete v0.1.0 --cleanup-tag --yes || true
-          gh release delete-asset v0.2.0 KassenSync-Setup.exe --yes || true
-          gh release delete-asset v0.2.0 KassenSync-Setup.exe.sha256 --yes || true
