@@ -5,60 +5,133 @@
              UseLayoutRounding="True">
     <Viewbox Stretch="Uniform">
         <Canvas Width="256" Height="256">
-            <Path Data="M36,50 L110,50 L136,67 L188,67 L188,86 L36,86 Z"
-                  Fill="#1779C9"/>
+            <Canvas.Resources>
+                <LinearGradientBrush x:Key="BackFolderBrush" StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#0759D5" Offset="0"/>
+                    <GradientStop Color="#06379F" Offset="1"/>
+                </LinearGradientBrush>
 
-            <Path Data="M38,68 H218
-                        C228,68 236,76 236,86
-                        V200
-                        C236,210 228,218 218,218
-                        H38
-                        C28,218 20,210 20,200
-                        V86
-                        C20,76 28,68 38,68 Z"
-                  Fill="#2399E2"
-                  Stroke="#1779C9"
-                  StrokeThickness="7"/>
+                <LinearGradientBrush x:Key="FrontFolderBrush" StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#63D0F7" Offset="0"/>
+                    <GradientStop Color="#1598F1" Offset="0.50"/>
+                    <GradientStop Color="#064DC8" Offset="1"/>
+                </LinearGradientBrush>
 
-            <Path Data="M44,88 H212
-                        C220,88 227,95 227,103
-                        V192
-                        C227,200 220,207 212,207
-                        H44
-                        C36,207 29,200 29,192
-                        V103
-                        C29,95 36,88 44,88 Z"
-                  Fill="#37ABEB"/>
+                <LinearGradientBrush x:Key="ArrowBrush" StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#FFFFFF" Offset="0"/>
+                    <GradientStop Color="#D8F7FF" Offset="0.42"/>
+                    <GradientStop Color="#18EAF3" Offset="1"/>
+                </LinearGradientBrush>
 
-            <Rectangle Canvas.Left="29"
-                       Canvas.Top="160"
-                       Width="198"
-                       Height="47"
-                       Fill="#1F8BDC"/>
+                <RadialGradientBrush x:Key="CenterGlowBrush"
+                                     GradientOrigin="0.36,0.28"
+                                     Center="0.50,0.50"
+                                     RadiusX="0.70"
+                                     RadiusY="0.70">
+                    <GradientStop Color="#166BE3" Offset="0"/>
+                    <GradientStop Color="#063EB5" Offset="1"/>
+                </RadialGradientBrush>
+            </Canvas.Resources>
 
-            <Path Data="M81,154
-                        C91,123 118,108 148,113
-                        C163,115 176,122 185,132"
-                  Stroke="White"
-                  StrokeThickness="16"
+            <!-- rear folder -->
+            <Path Fill="{StaticResource BackFolderBrush}"
+                  Stroke="#159DF6"
+                  StrokeThickness="5"
+                  StrokeLineJoin="Round"
+                  Data="M46,49
+                        C39,49 34,55 34,63
+                        L34,112
+                        L230,112
+                        L230,102
+                        C230,89 220,79 207,79
+                        L158,79
+                        C149,79 144,76 138,70
+                        L118,51
+                        C113,47 108,45 100,45
+                        L46,45
+                        C41,45 37,47 34,51 Z"/>
+
+            <!-- front folder body -->
+            <Path Fill="{StaticResource FrontFolderBrush}"
+                  Stroke="#6ED8FF"
+                  StrokeThickness="4"
+                  StrokeLineJoin="Round"
+                  Data="M31,91
+                        C32,81 40,74 51,74
+                        L104,74
+                        C116,74 121,77 129,84
+                        L143,96
+                        C151,103 158,106 170,106
+                        L221,106
+                        C233,106 242,116 241,128
+                        L234,208
+                        C233,220 224,229 212,229
+                        L46,229
+                        C34,229 25,220 24,208
+                        L17,113
+                        C16,102 21,94 31,91 Z"/>
+
+            <!-- glossy diagonal overlay -->
+            <Path Opacity="0.22"
+                  Fill="#FFFFFF"
+                  Data="M24,208
+                        L17,113
+                        C16,102 21,94 31,91
+                        C75,82 112,95 147,111
+                        C113,130 75,160 39,205
+                        C35,210 30,211 24,208 Z"/>
+
+            <!-- darker center behind sync arrows -->
+            <Ellipse Canvas.Left="69"
+                     Canvas.Top="103"
+                     Width="123"
+                     Height="111"
+                     Fill="{StaticResource CenterGlowBrush}"
+                     Opacity="0.90"/>
+
+            <!-- upper/right sync arc -->
+            <Path Stroke="{StaticResource ArrowBrush}"
+                  StrokeThickness="17"
                   StrokeStartLineCap="Round"
                   StrokeEndLineCap="Round"
-                  Fill="Transparent"/>
+                  Fill="Transparent"
+                  Data="M82,166
+                        C90,130 119,110 151,112
+                        C169,113 184,120 195,132"/>
 
-            <Path Data="M175,103 L205,122 L178,143 Z"
-                  Fill="White"/>
+            <Path Fill="#19E7F2"
+                  Stroke="#73F8FF"
+                  StrokeThickness="2"
+                  StrokeLineJoin="Round"
+                  Data="M188,121 L218,139 L190,165
+                        C186,169 180,167 180,161
+                        L182,148
+                        C169,135 153,129 136,131
+                        L143,113
+                        C159,112 176,116 188,121 Z"/>
 
-            <Path Data="M175,163
-                        C165,194 138,209 108,204
-                        C93,202 80,195 71,185"
-                  Stroke="White"
-                  StrokeThickness="16"
+            <!-- lower/left sync arc -->
+            <Path Stroke="{StaticResource ArrowBrush}"
+                  StrokeThickness="17"
                   StrokeStartLineCap="Round"
                   StrokeEndLineCap="Round"
-                  Fill="Transparent"/>
+                  Fill="Transparent"
+                  Data="M188,166
+                        C179,199 151,216 121,212
+                        C101,210 86,201 76,190"/>
 
-            <Path Data="M81,191 L51,172 L78,151 Z"
-                  Fill="White"/>
+            <Path Fill="#FFFFFF"
+                  Stroke="#EEF9FF"
+                  StrokeThickness="2"
+                  StrokeLineJoin="Round"
+                  Data="M78,177 L49,196 L77,219
+                        C82,223 88,220 87,214
+                        L84,202
+                        C96,213 111,218 127,217
+                        L120,198
+                        C105,197 93,190 84,181
+                        L85,180
+                        C84,176 81,175 78,177 Z"/>
         </Canvas>
     </Viewbox>
 </UserControl>
