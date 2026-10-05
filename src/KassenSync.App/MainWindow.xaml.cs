@@ -44,6 +44,9 @@ public partial class MainWindow : Window
     private bool _updateCheckRunning;
     private bool _changingHeaderSelection;
     private bool _allowClose;
+    private bool _updatingServiceAutostartUi;
+    private bool _serviceAutostartDirty;
+    private bool? _serviceAutoStartEnabled;
     private readonly bool _updatedOnLaunch;
     private readonly bool _startMinimized;
     private string? _lastCompletedOperationId;
@@ -51,9 +54,6 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-
-        HeaderLogoImage.Source = LogoImageService.GetBestIconFrame(48);
-        AboutLogoImage.Source = LogoImageService.GetBestIconFrame(128);
 
         VersionText.Text = $"OrdnerSync {AppVersion.Display}";
         AboutVersionText.Text = $"Version {AppVersion.Display}";
@@ -345,6 +345,11 @@ public partial class MainWindow : Window
     {
         AutostartCheckBox.IsChecked = AutostartManager.IsEnabled();
         UpdateCheckBox.IsChecked = settings.CheckForUpdatesOnStart;
+
+        BackgroundColorTextBox.Text = ThemeService.Normalize(settings.UiBackgroundColor);
+        ThemeService.ApplyBackground(BackgroundColorTextBox.Text);
+        UpdateBackgroundColorPreview();
+
         SuccessNotificationModeComboBox.SelectedValue = settings.SuccessNotificationMode;
         SuccessNotificationSecondsTextBox.Text =
             Math.Clamp(settings.SuccessNotificationSeconds, 1, 60).ToString();
@@ -990,6 +995,10 @@ public partial class MainWindow : Window
                 settings);
 
             AutostartManager.SetEnabled(_settings.GuiAutostart);
+            ThemeService.ApplyBackground(_settings.UiBackgroundColor);
+
+            await ApplyServiceAutostartIfChangedAsync();
+
             LoadSettingsIntoUi(_settings);
             RebuildFileRows();
 
@@ -1047,12 +1056,129 @@ public partial class MainWindow : Window
             CheckForUpdatesOnStart = UpdateCheckBox.IsChecked == true,
             SuccessNotificationMode = notificationMode,
             SuccessNotificationSeconds = notificationSeconds,
+            UiBackgroundColor = ValidateBackgroundColor(),
             RescanIntervalSeconds = _settings?.RescanIntervalSeconds ?? 30,
             FileStableDelayMilliseconds =
                 _settings?.FileStableDelayMilliseconds ?? 1500
         };
 
         return settings;
+    }
+
+    private string ValidateBackgroundColor()
+    {
+        var value = (BackgroundColorTextBox.Text ?? string.Empty).Trim().ToUpperInvariant();
+
+        if (!KassenSync.Core.Services.SettingsMigration.IsValidRgbHex(value))
+            throw new InvalidOperationException(
+                "Die Hintergrundfarbe muss als HEX-Wert im Format #RRGGBB angegeben werden.");
+
+        return value;
+    }
+
+    private void BackgroundColorTextBox_TextChanged(
+        object sender,
+        System.Windows.Controls.TextChangedEventArgs e)
+    {
+        if (BackgroundColorPreview is null)
+            return;
+
+        UpdateBackgroundColorPreview();
+
+        var value = (BackgroundColorTextBox.Text ?? string.Empty).Trim();
+        if (KassenSync.Core.Services.SettingsMigration.IsValidRgbHex(value))
+            ThemeService.ApplyBackground(value);
+    }
+
+    private void UpdateBackgroundColorPreview()
+    {
+        if (BackgroundColorPreview is null || BackgroundColorTextBox is null)
+            return;
+
+        var value = (BackgroundColorTextBox.Text ?? string.Empty).Trim();
+
+        try
+        {
+            var color = (System.Windows.Media.Color)
+                System.Windows.Media.ColorConverter.ConvertFromString(
+                    KassenSync.Core.Services.SettingsMigration.IsValidRgbHex(value)
+                        ? value
+                        : ThemeService.DefaultBackgroundColor);
+
+            BackgroundColorPreview.Background =
+                new System.Windows.Media.SolidColorBrush(color);
+        }
+        catch
+        {
+            BackgroundColorPreview.Background =
+                System.Windows.Media.Brushes.Transparent;
+        }
+    }
+
+    private void ChooseBackgroundColorButton_Click(object sender, RoutedEventArgs e)
+    {
+        using var dialog = new System.Windows.Forms.ColorDialog
+        {
+            FullOpen = true,
+            AnyColor = true
+        };
+
+        try
+        {
+            var current = ThemeService.Normalize(BackgroundColorTextBox.Text);
+            dialog.Color = System.Drawing.ColorTranslator.FromHtml(current);
+        }
+        catch
+        {
+        }
+
+        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+            return;
+
+        BackgroundColorTextBox.Text =
+            $"#{dialog.Color.R:X2}{dialog.Color.G:X2}{dialog.Color.B:X2}";
+    }
+
+    private void ResetBackgroundColorButton_Click(object sender, RoutedEventArgs e)
+        => BackgroundColorTextBox.Text = ThemeService.DefaultBackgroundColor;
+
+    private void ServiceAutostartCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_updatingServiceAutostartUi)
+            return;
+
+        _serviceAutostartDirty = true;
+    }
+
+    private async Task ApplyServiceAutostartIfChangedAsync()
+    {
+        if (!_serviceAutostartDirty ||
+            !_serviceAutoStartEnabled.HasValue ||
+            ServiceAutostartCheckBox.IsEnabled == false)
+            return;
+
+        var desired = ServiceAutostartCheckBox.IsChecked == true;
+
+        if (desired == _serviceAutoStartEnabled.Value)
+        {
+            _serviceAutostartDirty = false;
+            return;
+        }
+
+        try
+        {
+            await _serviceManager.RunElevatedActionAsync(
+                desired ? "--enable-autostart" : "--disable-autostart");
+
+            _serviceAutoStartEnabled = desired;
+            _serviceAutostartDirty = false;
+            RefreshServiceStatus();
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            throw new InvalidOperationException(
+                "Die Einstellungen wurden gespeichert, aber die Änderung des Dienst-Autostarts wurde in der Administratorabfrage abgebrochen.");
+        }
     }
 
     private void SuccessNotificationModeComboBox_SelectionChanged(
@@ -1198,6 +1324,15 @@ public partial class MainWindow : Window
                 $"Installiert: {(info.Installed ? "Ja" : "Nein")}";
 
             ServiceStateText.Text = $"Status: {info.StatusText}";
+            _serviceAutoStartEnabled = info.AutoStartEnabled;
+
+            if (!_serviceAutostartDirty)
+            {
+                _updatingServiceAutostartUi = true;
+                ServiceAutostartCheckBox.IsEnabled = info.Installed;
+                ServiceAutostartCheckBox.IsChecked = info.AutoStartEnabled == true;
+                _updatingServiceAutostartUi = false;
+            }
 
             if (!info.Installed)
             {
@@ -1219,6 +1354,14 @@ public partial class MainWindow : Window
             ServiceInstalledText.Text = "Installiert: unbekannt";
             ServiceStateText.Text = $"Status: {ex.Message}";
             ServiceSettingsStatusDot.Fill = System.Windows.Media.Brushes.Firebrick;
+
+            if (!_serviceAutostartDirty)
+            {
+                _updatingServiceAutostartUi = true;
+                ServiceAutostartCheckBox.IsEnabled = false;
+                ServiceAutostartCheckBox.IsChecked = false;
+                _updatingServiceAutostartUi = false;
+            }
         }
     }
 

@@ -1,5 +1,16 @@
 # Releases
 
+## 0.3.2
+
+- sichtbares Logo in Hauptfenster und Über-Seite vollständig als Vektorgrafik umgesetzt
+- defekte ICO-Darstellung beeinflusst die GUI nicht mehr
+- Dienst-Autostart in den Einstellungen aktivierbar/deaktivierbar
+- deaktivierter Dienst-Autostart bedeutet manueller Start, nicht deaktivierter Dienst
+- frei wählbare Hintergrundfarbe für OrdnerSync-Fenster und Meldungen
+- Farbauswahl per Dialog, HEX-Feld und Standard-Schaltfläche
+- neues Standard-Theme in hellem Blau (#EAF6FF)
+
+
 ## 0.3.1
 
 - Darstellungsfehler bei der Anzeigedauer behoben

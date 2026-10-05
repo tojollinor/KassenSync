@@ -43,7 +43,9 @@
             </StackPanel>
         </Grid>
 
-        <TabControl Grid.Row="1" x:Name="MainTabs">
+        <TabControl Grid.Row="1"
+                    x:Name="MainTabs"
+                    Background="{DynamicResource AppBackgroundBrush}">
             <TabItem Header="Dateien">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
@@ -344,7 +346,9 @@
                         <TextBlock Text="Windows-Dienst" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
                         <CheckBox x:Name="ServiceAutostartCheckBox"
                                   Content="Windows-Dienst automatisch mit Windows starten"
-                                  Margin="0,0,0,4"/>
+                                  Margin="0,0,0,4"
+                                  Checked="ServiceAutostartCheckBox_Changed"
+                                  Unchecked="ServiceAutostartCheckBox_Changed"/>
                         <TextBlock Text="Aus = manueller Start möglich. Der Dienst wird nicht deaktiviert."
                                    Foreground="Gray"
                                    Margin="22,0,0,12"/>
