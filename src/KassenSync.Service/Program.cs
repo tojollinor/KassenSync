@@ -19,8 +19,14 @@ if (args.Any(x => string.Equals(x, "--stop-service", StringComparison.OrdinalIgn
     return;
 }
 
+if (args.Any(x => string.Equals(x, "--restart-service", StringComparison.OrdinalIgnoreCase)))
+{
+    Environment.ExitCode = ServiceInstaller.Restart();
+    return;
+}
+
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddWindowsService(options => options.ServiceName = "KassenSync Service");
+builder.Services.AddWindowsService(options => options.ServiceName = ServiceInstaller.ServiceName);
 builder.Services.AddSingleton<SettingsStore>();
 builder.Services.AddSingleton<IndexDatabase>();
 builder.Services.AddSingleton<FileHashService>();

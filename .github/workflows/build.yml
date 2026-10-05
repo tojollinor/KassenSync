@@ -24,7 +24,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore KassenSync.sln
+        run: dotnet restore OrdnerSync.sln
 
       - name: Build
-        run: dotnet build KassenSync.sln -c Release --no-restore
+        run: dotnet build OrdnerSync.sln -c Release --no-restore

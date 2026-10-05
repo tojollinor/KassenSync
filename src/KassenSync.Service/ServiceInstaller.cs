@@ -4,15 +4,17 @@ namespace KassenSync.Service;
 
 internal static class ServiceInstaller
 {
-    private const string ServiceName = "KassenSync Service";
+    public const string ServiceName = "OrdnerSync Service";
+    private const string LegacyServiceName = "KassenSync Service";
 
     public static int Install()
     {
-        StopAndDelete();
-        var exe = Environment.ProcessPath ?? throw new InvalidOperationException("Programmpfad konnte nicht bestimmt werden.");
+        StopAndDelete(ServiceName);
+        StopAndDelete(LegacyServiceName);
 
+        var exe = Environment.ProcessPath ?? throw new InvalidOperationException("Programmpfad konnte nicht bestimmt werden.");
         RunSc("create", ServiceName, "binPath=", $"\"{exe}\"", "start=", "auto", "DisplayName=", ServiceName);
-        RunSc("description", ServiceName, "Überwacht den KassenSync-Quellordner und kopiert neue Dateien auf das konfigurierte Zielmedium.");
+        RunSc("description", ServiceName, "Überwacht den OrdnerSync-Quellordner und kopiert neue Dateien auf das konfigurierte Zielmedium.");
         RunSc("failure", ServiceName, "reset=", "86400", "actions=", "restart/5000/restart/5000/restart/5000");
         RunSc("start", ServiceName);
         return 0;
@@ -20,7 +22,8 @@ internal static class ServiceInstaller
 
     public static int Uninstall()
     {
-        StopAndDelete();
+        StopAndDelete(ServiceName);
+        StopAndDelete(LegacyServiceName);
         return 0;
     }
 
@@ -30,12 +33,20 @@ internal static class ServiceInstaller
         return 0;
     }
 
-    private static void StopAndDelete()
+    public static int Restart()
     {
         RunScIgnoreErrors("stop", ServiceName);
         Thread.Sleep(1200);
-        RunScIgnoreErrors("delete", ServiceName);
-        Thread.Sleep(300);
+        RunSc("start", ServiceName);
+        return 0;
+    }
+
+    private static void StopAndDelete(string serviceName)
+    {
+        RunScIgnoreErrors("stop", serviceName);
+        Thread.Sleep(800);
+        RunScIgnoreErrors("delete", serviceName);
+        Thread.Sleep(250);
     }
 
     private static void RunSc(params string[] arguments)
