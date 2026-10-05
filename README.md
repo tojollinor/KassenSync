@@ -26,10 +26,6 @@ Bereits erfolgreich ausgegebene Dateien werden nicht automatisch erneut kopiert,
 - automatische oder manuelle Updateprüfung über GitHub Releases
 - Installer und Updates direkt aus `tojollinor/OrdnerSync`
 
-## Upgrade von KassenSync 0.1.0
-
-OrdnerSync 0.2.0 übernimmt den bisherigen Index und die Einstellungen. Der Release stellt zusätzlich KassenSync-kompatible Assetnamen bereit, damit die bereits installierte 0.1.0 das Rename-Update automatisch laden kann.
-
 ## Architektur
 
-Die bestehenden internen .NET-Namespaces bleiben aus Kompatibilitätsgründen vorerst `KassenSync.*`. Die ausgelieferten Assemblies, Oberfläche, Dienstidentität, Datenpfade und Installer heißen **OrdnerSync**.
+Die bestehenden internen .NET-Namespaces bleiben vorerst `KassenSync.*`. Die ausgelieferten Assemblies, Oberfläche, Dienstidentität, Datenpfade und Installer heißen **OrdnerSync**.

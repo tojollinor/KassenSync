@@ -82,14 +82,12 @@ jobs:
         run: |
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' "/DMyAppVersion=$env:VERSION" 'installer\OrdnerSync.iss'
 
-      - name: Create checksums and KassenSync compatibility assets
+      - name: Create checksum
         shell: pwsh
         run: |
           $setup = 'artifacts/installer/OrdnerSync-Setup.exe'
           $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  OrdnerSync-Setup.exe" | Set-Content 'artifacts/installer/OrdnerSync-Setup.exe.sha256' -NoNewline
-          Copy-Item $setup 'artifacts/installer/KassenSync-Setup.exe'
-          "$hash  KassenSync-Setup.exe" | Set-Content 'artifacts/installer/KassenSync-Setup.exe.sha256' -NoNewline
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
@@ -98,8 +96,6 @@ jobs:
           path: |
             artifacts/installer/OrdnerSync-Setup.exe
             artifacts/installer/OrdnerSync-Setup.exe.sha256
-            artifacts/installer/KassenSync-Setup.exe
-            artifacts/installer/KassenSync-Setup.exe.sha256
 
       - name: Create or update GitHub Release
         shell: pwsh
@@ -114,6 +110,18 @@ jobs:
           gh release upload $tag `
             'artifacts/installer/OrdnerSync-Setup.exe' `
             'artifacts/installer/OrdnerSync-Setup.exe.sha256' `
-            'artifacts/installer/KassenSync-Setup.exe' `
-            'artifacts/installer/KassenSync-Setup.exe.sha256' `
             --clobber
+
+  cleanup-kassensync:
+    if: contains(github.event.head_commit.message, '[cleanup-kassensync]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove legacy KassenSync release and assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          gh release delete v0.1.0 --cleanup-tag --yes || true
+          gh release delete-asset v0.2.0 KassenSync-Setup.exe --yes || true
+          gh release delete-asset v0.2.0 KassenSync-Setup.exe.sha256 --yes || true
