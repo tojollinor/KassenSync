@@ -1,5 +1,16 @@
 # Releases
 
+## 0.3.3
+
+- neues sauberes Mehrgrößen-ICO für Desktop, Taskleiste, Fenster und Installer
+- halbtransparente Flächen im eigentlichen Logo entfernt
+- Meldungsfenster rahmenlos dargestellt
+- Info-, Erfolgs-, USB- und Fehlermeldungen in ihren Fenstern zentriert
+- Update-Erfolgsmeldung ebenfalls rahmenlos und zentriert
+- neue Standard-Hintergrundfarbe #A4D8FF
+- bisheriger 0.3.2-Standard #EAF6FF wird beim Upgrade auf #A4D8FF migriert
+
+
 ## 0.3.2
 
 - sichtbares Logo in Hauptfenster und Über-Seite vollständig als Vektorgrafik umgesetzt

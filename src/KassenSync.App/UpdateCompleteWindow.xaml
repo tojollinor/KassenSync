@@ -1,1 +1,30 @@
-<Window x:Class="KassenSync.App.UpdateCompleteWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="OrdnerSync" Icon="Assets/OrdnerSync.ico" Width="430" Height="155" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Topmost="True" ShowInTaskbar="False" ShowActivated="False" WindowStyle="ToolWindow" Background="{DynamicResource AppBackgroundBrush}"><Grid Margin="22"><StackPanel><TextBlock Text="✓ Update erfolgreich installiert" FontSize="19" FontWeight="SemiBold" Foreground="ForestGreen"/><TextBlock x:Name="VersionText" Margin="0,12,0,0" TextWrapping="Wrap"/></StackPanel></Grid></Window>
+<Window x:Class="KassenSync.App.UpdateCompleteWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="OrdnerSync"
+        Width="430"
+        Height="155"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        WindowStartupLocation="CenterScreen"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Background="{DynamicResource AppBackgroundBrush}">
+    <Grid Margin="24">
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+            <TextBlock Text="✓ Update erfolgreich installiert"
+                       FontSize="19"
+                       FontWeight="SemiBold"
+                       Foreground="ForestGreen"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"/>
+            <TextBlock x:Name="VersionText"
+                       Margin="0,12,0,0"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</Window>

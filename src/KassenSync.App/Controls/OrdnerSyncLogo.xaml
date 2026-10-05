@@ -23,8 +23,7 @@
 
             <Ellipse Canvas.Left="34" Canvas.Top="49"
                      Width="60" Height="50"
-                     Fill="#0E6EB8"
-                     Opacity="0.20"/>
+                     Fill="#2A8FD8"/>
 
             <Path Data="M44,80 C48,62 69,55 84,64 L78,57 L85,54 L99,70 L83,82 L79,75 L85,70 C74,62 58,66 53,79 Z"
                   Fill="White"/>

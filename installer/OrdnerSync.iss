@@ -1,6 +1,6 @@
 #define MyAppName "OrdnerSync"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.3.2"
+  #define MyAppVersion "0.3.3"
 #endif
 #define MyAppPublisher "OrdnerSync"
 #define MyAppExeName "OrdnerSync.App.exe"

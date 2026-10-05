@@ -26,12 +26,21 @@ public static class SettingsMigration
 
         if (!IsValidRgbHex(settings.UiBackgroundColor))
         {
-            settings.UiBackgroundColor = "#EAF6FF";
+            settings.UiBackgroundColor = "#A4D8FF";
             changed = true;
         }
         else
         {
             var normalizedColor = settings.UiBackgroundColor.ToUpperInvariant();
+
+            // 0.3.2 verwendete #EAF6FF als Standard. Beim Upgrade auf 0.3.3
+            // wird nur genau dieser alte Standard auf das neue OrdnerSync-Blau migriert.
+            if (string.Equals(normalizedColor, "#EAF6FF", StringComparison.OrdinalIgnoreCase))
+            {
+                normalizedColor = "#A4D8FF";
+                changed = true;
+            }
+
             if (!string.Equals(settings.UiBackgroundColor, normalizedColor, StringComparison.Ordinal))
             {
                 settings.UiBackgroundColor = normalizedColor;

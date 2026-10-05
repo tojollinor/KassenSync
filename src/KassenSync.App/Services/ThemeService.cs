@@ -4,7 +4,7 @@ namespace KassenSync.App.Services;
 
 public static class ThemeService
 {
-    public const string DefaultBackgroundColor = "#EAF6FF";
+    public const string DefaultBackgroundColor = "#A4D8FF";
 
     public static void ApplyBackground(string? hexColor)
     {
