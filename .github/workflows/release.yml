@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       version:
@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   release:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]')
     runs-on: windows-latest
 
     steps:
@@ -33,7 +34,8 @@ jobs:
           if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
             $version = '${{ inputs.version }}'
           } else {
-            $version = '${{ github.ref_name }}'.TrimStart('v')
+            [xml]$props = Get-Content 'Directory.Build.props'
+            $version = [string]$props.Project.PropertyGroup.Version
           }
           if ($version -notmatch '^\d+\.\d+\.\d+$') {
             throw "Ungültige Version: $version"
@@ -43,6 +45,10 @@ jobs:
       - name: Restore
         run: dotnet restore KassenSync.sln
 
+      - name: Build
+        run: dotnet build KassenSync.sln -c Release --no-restore -p:Version=$env:VERSION
+        shell: pwsh
+
       - name: Publish WPF app
         shell: pwsh
         run: |
@@ -50,6 +56,7 @@ jobs:
             -c Release `
             -r win-x64 `
             --self-contained true `
+            --no-restore `
             -p:Version=$env:VERSION `
             -p:DebugType=None `
             -p:DebugSymbols=false `
@@ -62,6 +69,7 @@ jobs:
             -c Release `
             -r win-x64 `
             --self-contained true `
+            --no-restore `
             -p:Version=$env:VERSION `
             -p:DebugType=None `
             -p:DebugSymbols=false `
