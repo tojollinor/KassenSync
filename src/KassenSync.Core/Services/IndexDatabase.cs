@@ -74,8 +74,8 @@ public sealed class IndexDatabase
         command.CommandText = """
             INSERT OR IGNORE INTO indexed_files
             (job_id, source_side, file_name, relative_path, full_source_path, sha256,
-             size_bytes, detected_at_utc, status)
-            VALUES ($job, $side, $name, $relative, $full, $sha, $size, $detected, $status);
+             size_bytes, detected_at_utc, status, last_error)
+            VALUES ($job, $side, $name, $relative, $full, $sha, $size, $detected, $status, $error);
             SELECT CASE WHEN changes() = 1 THEN last_insert_rowid() ELSE NULL END;
             """;
         command.Parameters.AddWithValue("$job", string.IsNullOrWhiteSpace(file.JobId) ? SyncJob.LegacyJobId : file.JobId);
@@ -87,6 +87,7 @@ public sealed class IndexDatabase
         command.Parameters.AddWithValue("$size", file.SizeBytes);
         command.Parameters.AddWithValue("$detected", file.DetectedAtUtc.ToString("O"));
         command.Parameters.AddWithValue("$status", (int)file.Status);
+        command.Parameters.AddWithValue("$error", (object?)file.LastError ?? DBNull.Value);
         var value = await command.ExecuteScalarAsync(cancellationToken);
         return value is null or DBNull ? null : Convert.ToInt64(value);
     }
@@ -217,6 +218,51 @@ public sealed class IndexDatabase
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    public async Task<string?> GetSyncBaselineAsync(
+        string jobId,
+        string relativePath,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqliteConnection(ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT sha256
+            FROM sync_baselines
+            WHERE job_id = $job AND relative_path = $relative
+            LIMIT 1;
+            """;
+        command.Parameters.AddWithValue("$job", jobId);
+        command.Parameters.AddWithValue("$relative", NormalizeRelativePath(relativePath));
+        var value = await command.ExecuteScalarAsync(cancellationToken);
+        return value is null or DBNull ? null : Convert.ToString(value);
+    }
+
+    public async Task SetSyncBaselineAsync(
+        string jobId,
+        string relativePath,
+        string sha256,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqliteConnection(ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO sync_baselines(job_id, relative_path, sha256, updated_at_utc)
+            VALUES ($job, $relative, $sha, $updated)
+            ON CONFLICT(job_id, relative_path)
+            DO UPDATE SET sha256 = excluded.sha256, updated_at_utc = excluded.updated_at_utc;
+            """;
+        command.Parameters.AddWithValue("$job", jobId);
+        command.Parameters.AddWithValue("$relative", NormalizeRelativePath(relativePath));
+        command.Parameters.AddWithValue("$sha", sha256);
+        command.Parameters.AddWithValue("$updated", DateTime.UtcNow.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static string NormalizeRelativePath(string path)
+        => path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+
     private static async Task CreateCurrentSchemaAsync(
         SqliteConnection connection,
         CancellationToken cancellationToken)
@@ -296,7 +342,16 @@ public sealed class IndexDatabase
                 ON indexed_files(job_id, status);
             CREATE INDEX IF NOT EXISTS ix_indexed_files_detected
                 ON indexed_files(detected_at_utc DESC);
-            PRAGMA user_version = 3;
+
+            CREATE TABLE IF NOT EXISTS sync_baselines (
+                job_id TEXT NOT NULL,
+                relative_path TEXT NOT NULL,
+                sha256 TEXT NOT NULL,
+                updated_at_utc TEXT NOT NULL,
+                PRIMARY KEY(job_id, relative_path)
+            );
+
+            PRAGMA user_version = 4;
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
