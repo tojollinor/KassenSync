@@ -21,7 +21,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Image Source="Assets/OrdnerSync.ico"
+            <Image Source="Assets/OrdnerSyncIcon.png"
                    Width="44" Height="44"
                    Margin="0,0,12,0"
                    Stretch="Uniform"
