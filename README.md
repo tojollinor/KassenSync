@@ -1,47 +1,35 @@
-# KassenSync
+# OrdnerSync
 
-KassenSync ist eine Windows-Anwendung aus **WPF-GUI + Windows-Dienst**. Der Dienst überwacht einen konfigurierbaren Quellordner, indexiert neue Dateien anhand **Dateiname + SHA-256** und kopiert sie auf ein konfiguriertes Ziellaufwerk.
+OrdnerSync ist eine Windows-Anwendung aus **WPF-GUI + Windows-Dienst**. Der Dienst überwacht einen konfigurierbaren Quellordner, indexiert neue Dateien anhand **Dateiname + SHA-256** und kopiert sie auf ein konfiguriertes Zielmedium.
 
-Bereits erfolgreich ausgegebene Dateien werden nicht automatisch erneut kopiert, auch wenn sie später vom Zielmedium gelöscht werden. Über die GUI können einzelne oder mehrere markierte Dateien bewusst erneut ausgegeben werden.
+Bereits erfolgreich ausgegebene Dateien werden nicht automatisch erneut kopiert, auch wenn sie später vom Zielmedium gelöscht werden. Über Checkboxen können einzelne oder mehrere Dateien bewusst erneut ausgegeben werden.
 
 ## Funktionen
 
 - Windows-Dienst und WPF-GUI
-- SQLite-Index unter `%ProgramData%\\KassenSync`
+- SQLite-Index unter `%ProgramData%\\OrdnerSync`
+- automatische Migration des bisherigen `%ProgramData%\\KassenSync`-Datenbestands
 - konfigurierbarer Quellordner und optionale Unterordner
 - konfigurierbare Dateiendungen
 - `FileSystemWatcher` plus Sicherheits-Rescan
 - Stabilitätsprüfung vor Hashing/Kopieren
 - SHA-256-Indexierung über Dateiname + Hash
-- festes, schnell änderbares Ziellaufwerk, z. B. `E:\\`
-- frei wählbarer Ziel-Unterordner
+- frei wählbares Ziellaufwerk und Ziel-Unterordner
 - Übernahme der relativen Quellordnerstruktur
 - Wartestatus bei fehlendem Zielmedium
 - sicheres Kopieren über temporäre `.part`-Datei
-- WPF-Dateiübersicht mit Mehrfachauswahl, Status, Zeitstempeln und Ausgabezähler
-- manuelle Wiederausgabe markierter Dateien
+- Checkbox-Auswahl mit manueller Wiederausgabe
+- Dienststatus und Dienststeuerung in den Einstellungen
 - konfigurierbarer GUI-Autostart
-- Topmost-WPF-Kopierfenster mit Live-Fortschritt
-- drei Sekunden sichtbare Erfolg-/Fehlermeldung nach einem Kopiervorgang
+- Topmost-Kopierfortschritt und Ergebnisanzeige
+- Über-Seite und OrdnerSync-Branding
 - automatische oder manuelle Updateprüfung über GitHub Releases
-- direkter Download von `KassenSync-Setup.exe` aus GitHub Releases
-- SHA-256-Prüfung des heruntergeladenen Installers
-- UAC-gestütztes Update mit sichtbarem Installationsfortschritt
-- automatischer Neustart der App mit Update-Erfolgsmeldung
+- Installer und Updates direkt aus `tojollinor/OrdnerSync`
 
-## Installer und Releases
+## Upgrade von KassenSync 0.1.0
 
-Der Installer wird mit Inno Setup gebaut. Die GitHub-Actions-Releasepipeline veröffentlicht:
-
-- `KassenSync-Setup.exe`
-- `KassenSync-Setup.exe.sha256`
-
-Ein Release kann durch einen Tag wie `v0.1.0` oder manuell über den Release-Workflow erzeugt werden.
+OrdnerSync 0.2.0 übernimmt den bisherigen Index und die Einstellungen. Der Release stellt zusätzlich KassenSync-kompatible Assetnamen bereit, damit die bereits installierte 0.1.0 das Rename-Update automatisch laden kann.
 
 ## Architektur
 
-- `KassenSync.Core`: Modelle, Datenbank, Einstellungen, Hashing und Kopierfunktionen
-- `KassenSync.Service`: Windows-Dienst, Watcher, Indexierung, Kopierwarteschlange und IPC-Server
-- `KassenSync.App`: WPF-GUI, IPC-Client und GitHub-Updater
-
-Der Windows-Dienst zeigt selbst keine Fenster. Benutzerinteraktion findet ausschließlich in der WPF-GUI statt.
+Die bestehenden internen .NET-Namespaces bleiben aus Kompatibilitätsgründen vorerst `KassenSync.*`. Die ausgelieferten Assemblies, Oberfläche, Dienstidentität, Datenpfade und Installer heißen **OrdnerSync**.

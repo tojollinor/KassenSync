@@ -8,7 +8,7 @@ public sealed class Worker(IndexDatabase database, SettingsStore settingsStore, 
     {
         await database.InitializeAsync(stoppingToken);
         var settings = await settingsStore.LoadAsync(stoppingToken);
-        logger.LogInformation("KassenSync service started. Source: {Source}, Target: {Target}",
+        logger.LogInformation("OrdnerSync service started. Source: {Source}, Target: {Target}",
             settings.SourceFolder, Path.Combine(settings.TargetDrive, settings.TargetSubfolder));
 
         while (!stoppingToken.IsCancellationRequested)
